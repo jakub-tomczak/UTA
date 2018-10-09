@@ -29,7 +29,7 @@ utamp1 <- function(model, allowInconsistency = FALSE) {
     stop("Use function buildModel with includeEpsilonAsVariable = TRUE.")
   }
 
-  objective <- createObjective(model$constraints$lhs, model$epsilionValue)
+  objective <- createObjective(model$constraints$lhs, model$epsilonIndex)
   solution <- extremizeVariable(objective, model$constraints, maximize=TRUE)
 
   return(getSolutionOrError(solution, allowInconsistency))
