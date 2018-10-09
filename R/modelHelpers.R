@@ -13,7 +13,21 @@ createPreferencesToModelVariables <- function(problem, firstChPointVariableIndex
     leastValuableValue <- if(direction == 'c') maximalValue else minimalValue
 
     if (problem$characteristicPoints[j] == 0) {
-      stop("Not implemented yet. Set characteristic points explicitly.")
+      #set coeff = 1 on all values on the current criterion
+      #except for the minimal one
+      minimalValueIndex = match(minimalValue, problem$performanceTable[,j])
+      for(i in seq_len(nrAlternatives))
+      {
+        if(i == minimalValueIndex)
+        {
+          if(direction == "g")
+          {
+            perfToModelVariables[[i,j]][[1]] = c(firstChPointVariableIndex[j] + index - 2, 1.0)
+          } else {
+            perfToModelVariables[[i,j]][[1]] = c(firstChPointVariableIndex[j] + index - 1, 1.0)
+          }
+        }
+      }
     } else {
       numberOfCharacteristicPoints <- problem$characteristicPoints[j]
       intervalLength <- (maximalValue - minimalValue) / (numberOfCharacteristicPoints - 1);
