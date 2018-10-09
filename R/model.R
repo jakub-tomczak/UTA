@@ -6,8 +6,8 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
   {
     stop("Method must be on of the following: `uta`, `utamp-1`, `utamp-2`")
   }
-  nrAlternatives <- nrow(problem$preferences)
-  nrCriteria <- ncol(problem$preferences)
+  nrAlternatives <- nrow(problem$performanceTable)
+  nrCriteria <- ncol(problem$performanceTable)
 
   firstChPointVariableIndex <- c(1)
   chPoints <- c()
@@ -17,7 +17,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
     numberOfCharacteristicPoints <- problem$characteristicPoints[j]
 
     if (numberOfCharacteristicPoints == 0) { #jeżeli nie wiadomo ile jest punktów charakterystycznych to załóż, że jest tyle ile jest kryteriów de facto
-      numberOfCharacteristicPoints <- length(problem$preferences[[j]])
+      numberOfCharacteristicPoints <- length(problem$performanceTable[[j]])
     }
 
     if (j != nrCriteria) { #jeżeli nie jesteśmy w ostatnim przejściu pętli

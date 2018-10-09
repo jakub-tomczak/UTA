@@ -1,16 +1,17 @@
 #### HELPERS
 createPreferencesToModelVariables <- function(problem, firstChPointVariableIndex)
 {
-  nrAlternatives <- nrow(problem$preferences)
-  nrCriteria <- ncol(problem$preferences)
+  nrAlternatives <- nrow(problem$performanceTable)
+  nrCriteria <- ncol(problem$performanceTable)
 
   preferencesToModelVariables <- replicate(nrCriteria, replicate(nrAlternatives, list()))
   for (j in seq_len(nrCriteria)) {
-    minimalValue <- min(problem$preferences[,j]) #minimal value on this criterium
-    maximalValue <- max(problem$preferences[,j]) #maximal value on this criterium
+    minimalValue <- min(problem$performanceTable[,j]) #minimal value on this criterium
+    maximalValue <- max(problem$performanceTable[,j]) #maximal value on this criterium
     direction <- problem$criteria[j]  #
     mostValuableValue <- if(direction == 'c') minimalValue else maximalValue
     leastValuableValue <- if(direction == 'c') maximalValue else minimalValue
+
 
     if (problem$characteristicPoints[j] == 0) {
       #set coeff = 1 on all values on the current criterion
@@ -30,41 +31,44 @@ createPreferencesToModelVariables <- function(problem, firstChPointVariableIndex
       }
     } else {
       numberOfCharacteristicPoints <- problem$characteristicPoints[j]
+      #interval between characteristic points
       intervalLength <- (maximalValue - minimalValue) / (numberOfCharacteristicPoints - 1);
-      coeff <- 1.0 / intervalLength;
 
       for (i in seq_len(nrAlternatives)) {
-        value <- problem$preferences[i, j]
-
+        #current value
+        value <- problem$performanceTable[i, j]
         if(value == mostValuableValue) #epsilion?
         {
-          #don't know why this offset is used
+          #for a criterion of type 'gain' offset is lowered by 2
+          #in order to has index 0 - best value is on the 0th index
+          #while for a criterion of type 'cost' best value is on the
+          #last index
           offset <- if(direction == "c") 0 else numberOfCharacteristicPoints - 2
-          preferencesToModelVariables[[i,j]][1] <- c(firstChPointVariableIndex[j] + offset, 1.0)
+          preferencesToModelVariables[[i,j]][[1]] <- c(firstChPointVariableIndex[j] + offset, 1.0)
 
           #least valuable alternative has its score equal to 0, that is why we ommit this this special case
           #least valuable alternative has an empty list in perfToModelVariable matrix
         } else if(value != leastValuableValue) {
-          #get the index of a chunk of intervalLength length
-          lowerChPointIndex <- floor((value-minimalValue)*coeff) #floor { (V-Min)/(Max-Min) * (Num-1) }
+          #get the index of a chunk of intervalLength length in which value stays
+          characteristicPointIndex <- floor((value-minimalValue)/intervalLength)
 
           #get the bounds of this chunk
-          lowerValue = minimalValue + intervalLength * lowerChPointIndex
-          upperValue = minimalValue + intervalLength * (lowerChPointIndex + 1)
+          lowerValue = minimalValue + intervalLength * characteristicPointIndex
+          upperValue = minimalValue + intervalLength * (characteristicPointIndex + 1)
 
           lowerCoeff <- 0.0
           upperCoeff <- 0.0
 
           if (value <= lowerValue) {
-            # comp accuracy
             lowerCoeff = 1.0
             upperCoeff = 0.0
           } else if (value >= upperValue) {
-            # comp accuracy
             lowerCoeff = 0.0
             upperCoeff = 1.0
           } else if(direction == "g") {
             #gain type
+            #find the coeff of the current value using linear regression
+            #between lower and upper value in the current interval
             lowerCoeff = (lowerValue - value) / (upperValue - lowerValue) + 1.0
             upperCoeff = (value - lowerValue) / (upperValue - lowerValue)
           } else {
@@ -76,27 +80,27 @@ createPreferencesToModelVariables <- function(problem, firstChPointVariableIndex
           if(direction == "g")
           {
             #gain type
-            if(lowerChPointIndex > 0)
+            if(characteristicPointIndex > 0)
             {
-              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + lowerChPointIndex - 1, lowerCoeff)
-              preferencesToModelVariables[[i, j]][[2]] = c(firstChPointVariableIndex[j] + lowerChPointIndex, upperCoeff)
+              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex - 1, lowerCoeff)
+              preferencesToModelVariables[[i, j]][[2]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, upperCoeff)
             }
             else
             {
-              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + lowerChPointIndex, upperCoeff)
+              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, upperCoeff)
             }
           }
           else
           {
             #cost type
-            if(lowerChPointIndex < numberOfCharacteristicPoints - 2)
+            if(characteristicPointIndex < numberOfCharacteristicPoints - 2)
             {
-              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + lowerChPointIndex, lowerCoeff)
-              preferencesToModelVariables[[i, j]][[2]] = c(firstChPointVariableIndex[j] + lowerChPointIndex + 1, upperCoeff)
+              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, lowerCoeff)
+              preferencesToModelVariables[[i, j]][[2]] = c(firstChPointVariableIndex[j] + characteristicPointIndex + 1, upperCoeff)
             }
             else
             {
-              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + lowerChPointIndex, lowerCoeff)
+              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, lowerCoeff)
             }
           }
         }
