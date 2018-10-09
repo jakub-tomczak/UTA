@@ -1,0 +1,54 @@
+#' @export
+buildProblem <- function(performanceTable, criteria, characteristicPoints, strongPreferences = NULL,
+                         weakPreferences = NULL , indifference = NULL)
+{
+  return(validateModel(performanceTable, criteria, strongPreferences,
+                       weakPreferences, characteristicPoints, indifference))
+}
+
+#' @export
+validateModel <- function(performanceTable, criteria, strongPreferences,
+                          weakPreferences, characteristicPoints, indifference)
+{
+  assert(is.matrix(performanceTable), "PerformanceTable must be a matrix.")
+
+  numberOfPreferences <- nrow(performanceTable)
+  numberOfCriterions <- ncol(performanceTable)
+  assert(ncol(criteria) == numberOfCriterions, "Number of criteria given in performanceTable matrix is not equal to the number of criteria names.")
+  assert(all(criteria %in% c("c", "g")), "Criteria must be of type `c` or `g`.")
+  #what if a,b,c,d
+  #aPb, aPc, bPc, aPd, bPd, cPd
+  #stopifnot(ncol(strongPreferences) <= numberOfPreferences) #stops execution if number of strong preference pairs is greater than number of performanceTable
+
+  strongPreferences <- validatePreferenceRelation(strongPreferences, numberOfPreferences)
+  weakPreferences <- validatePreferenceRelation(weakPreferences, numberOfPreferences)
+  indifference <- validatePreferenceRelation(indifference, numberOfPreferences)
+
+  assert(is.matrix(indifference), "Indifference must be a matrix")
+
+  return (list(
+    performanceTable = performanceTable,
+    criteria = criteria,
+    strongPreferences = strongPreferences,
+    weakPreferences = weakPreferences,
+    characteristicPoints = characteristicPoints,
+    indifference = indifference,
+    strictVF = TRUE
+  ))
+}
+
+validatePreferenceRelation <- function(preferenceRelation, numberOfPreferences)
+{
+  if(!is.matrix(preferenceRelation) || is.null(preferenceRelation))
+  {
+    return (matrix(nrow=0, ncol=2))
+  }
+
+  assert(ncol(preferenceRelation) == 2, "Preference relation must be given in pairs.")
+
+  #check weather minimum and maximum index are in performanceTable indices bounds
+  assert(min(preferenceRelation) >= 1, "There is no preference with index lower than 1")
+  assert(max(preferenceRelation) <= numberOfPreferences, paste("There is no preference with index higher than", numberOfPreferences))
+
+  return (preferenceRelation)
+}
