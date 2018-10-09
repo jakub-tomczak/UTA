@@ -18,6 +18,7 @@ isModelConsistent <- function(model) {
 }
 
 createObjective <- function(numberOfConstraints, extremizedVariableIndex){
+  assert(!is.null(extremizedVariableIndex), 'Variable to extremize is NULL')
   obj <- rep(0, ncol(numberOfConstraints))
   obj[extremizedVariableIndex] <- 1
   obj
