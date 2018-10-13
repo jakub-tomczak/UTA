@@ -50,57 +50,28 @@ createPreferencesToModelVariables <- function(problem, firstChPointVariableIndex
           #least valuable alternative has an empty list in perfToModelVariable matrix
         } else if(value != leastValuableValue) {
           #get the index of a chunk of intervalLength length in which value stays
-          characteristicPointIndex <- floor((value-minimalValue)/intervalLength)
+          coefficients <- getLowerAndUpperValuesCoefficients(value, minimalValue, intervalLength, direction, characteristicPointIndex)
 
-          #get the bounds of this chunk
-          lowerValue = minimalValue + intervalLength * characteristicPointIndex
-          upperValue = minimalValue + intervalLength * (characteristicPointIndex + 1)
-
-          lowerCoeff <- 0.0
-          upperCoeff <- 0.0
-
-          if (value <= lowerValue) {
-            lowerCoeff = 1.0
-            upperCoeff = 0.0
-          } else if (value >= upperValue) {
-            lowerCoeff = 0.0
-            upperCoeff = 1.0
-          } else if(direction == "g") {
-            #gain type
-            #find the coeff of the current value using linear regression
-            #between lower and upper value in the current interval
-            lowerCoeff = (lowerValue - value) / (upperValue - lowerValue) + 1.0
-            upperCoeff = (value - lowerValue) / (upperValue - lowerValue)
-          } else {
-            #cost type
-            lowerCoeff = (upperValue - value) / (upperValue - lowerValue)
-            upperCoeff = (value - upperValue) / (upperValue - lowerValue) + 1.0
-          }
-
-          if(direction == "g")
+          if(direction == 'g')
           {
-            #gain type
             if(characteristicPointIndex > 0)
             {
-              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex - 1, lowerCoeff)
-              preferencesToModelVariables[[i, j]][[2]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, upperCoeff)
+              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex - 1, coefficients$lowerValueCoeff)
+              preferencesToModelVariables[[i, j]][[2]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, coefficients$upperValueCoeff)
             }
             else
             {
-              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, upperCoeff)
+              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, coefficients$upperValueCoeff)
             }
-          }
-          else
-          {
-            #cost type
+          } else {
             if(characteristicPointIndex < numberOfCharacteristicPoints - 2)
             {
-              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, lowerCoeff)
-              preferencesToModelVariables[[i, j]][[2]] = c(firstChPointVariableIndex[j] + characteristicPointIndex + 1, upperCoeff)
+              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, coefficients$lowerValueCoeff)
+              preferencesToModelVariables[[i, j]][[2]] = c(firstChPointVariableIndex[j] + characteristicPointIndex + 1, coefficients$upperValueCoeff)
             }
             else
             {
-              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, lowerCoeff)
+              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, coefficients$lowerValueCoeff)
             }
           }
         }
@@ -108,8 +79,40 @@ createPreferencesToModelVariables <- function(problem, firstChPointVariableIndex
     }
   }
   return(preferencesToModelVariables)
+
+getLowerAndUpperValuesCoefficients <- function(value, minimalValue, intervalLength, direction, characteristicPointIndex){
+  assert(direction %in% c("c", "g"), "Direction must be of type `c` or `g`.")
+
+  #get the bounds of this chunk
+  lowerValue = minimalValue + intervalLength * characteristicPointIndex
+  upperValue = minimalValue + intervalLength * (characteristicPointIndex + 1)
+
+  assert(value >= lowerValue && value <= upperValue, 'Value cannot be neither lower than lowerValue nor higher than upperValue')
+
+  lowerValueCoeff <- if (value == lowerValue) 1.0 else 0.0
+  upperValueCoeff <- if (value == upperValue) 1.0 else 0.0
+
+  if(direction == "g") {
+    #gain type
+    #find the coefficients for the lower and upper bounds
+    #U(value) = U(lowerValue) + (value-lowerValue)/(upperValue-lowerValue)*(U(upperValue)-U(lowerValue))=
+    # = (value-lowerValue)/(upperValue-lowerValue)
+    lowerValueCoeff = (lowerValue - value) / intervalLength + 1.0
+    upperValueCoeff = (value - lowerValue) / intervalLength
+  } else {
+    #cost type
+    lowerValueCoeff = (upperValue - value) / intervalLength
+    upperValueCoeff = (value - upperValue) / intervalLength + 1.0
+  }
+  return(list(lowerValueCoeff=lowerValueCoeff, upperValueCoeff=upperValueCoeff))
 }
 
+getInterpolationCoefficients <- function(value, minimalValue, intervalLength){
+  coeff <- (value - minimalValue)/intervalLength
+  #lowerCoefficient = 1-coeff
+  #upperCoefficient = coeff
+  return(c(1-coeff, coeff))
+}
 
 buildPairwiseComparisonConstraint <- function(alternative, referenceAlternative, model, type, method) {
   stopifnot(type %in% c("weakPreference", "strongPreference", "indifference"))
