@@ -23,9 +23,9 @@ createPreferencesToModelVariables <- function(problem, firstChPointVariableIndex
         {
           if(direction == "g")
           {
-            perfToModelVariables[[i,j]][[1]] = c(firstChPointVariableIndex[j] + index - 2, 1.0)
+            preferencesToModelVariables[[i,j]][[1]] = c(firstChPointVariableIndex[j] + i - 2, 1.0)
           } else {
-            perfToModelVariables[[i,j]][[1]] = c(firstChPointVariableIndex[j] + index - 1, 1.0)
+            preferencesToModelVariables[[i,j]][[1]] = c(firstChPointVariableIndex[j] + i - 1, 1.0)
           }
         }
       }
