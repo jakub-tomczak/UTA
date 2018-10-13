@@ -28,7 +28,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
     chPoints[j] <- numberOfCharacteristicPoints
   }
 
-  numberOfVariables <- firstChPointVariableIndex[length(firstChPointVariableIndex)] + chPoints[nrCriteria] - 2
+  numberOfVariables <- problem$numberOfVariables + 1
 
   #preferences to model variables used in solution
   preferencesToModelVariables <- createPreferencesToModelVariables(problem, firstChPointVariableIndex)

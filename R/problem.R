@@ -26,12 +26,14 @@ validateModel <- function(performanceTable, criteria, strongPreferences,
 
   assert(is.matrix(indifference), "Indifference must be a matrix")
 
+  numberOfVariablesFromCharacteristicPoints <- sum(characteristicPoints) - length(characteristicPoints)
   return (list(
     performanceTable = performanceTable,
     criteria = criteria,
     strongPreferences = strongPreferences,
     weakPreferences = weakPreferences,
     characteristicPoints = characteristicPoints,
+    numberOfVariables = numberOfVariablesFromCharacteristicPoints,
     indifference = indifference,
     strictVF = TRUE
   ))
