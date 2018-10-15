@@ -8,9 +8,9 @@ utag <- function(model, allowInconsistency = FALSE)
   {
     if(model$criterionPreferenceDirection[j] == 'g')
     {
-      extremizedCriterionIndex <- model$firstChPointVariableIndex[j]
+      extremizedCriterionIndex <- model$criteriaIndices[j]
     } else {
-      extremizedCriterionIndex <- model$firstChPointVariableIndex[j] + model$chPoints[j] - 2
+      extremizedCriterionIndex <- model$criteriaIndices[j] + model$chPoints[j] - 2
     }
     objective <- createObjective(model$constraints$lhs, extremizedCriterionIndex)
     solutionMinRaw <- extremizeVariable(objective, model$constraints, maximize=FALSE)

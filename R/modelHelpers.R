@@ -1,5 +1,5 @@
 #### HELPERS
-createPreferencesToModelVariables <- function(problem, firstChPointVariableIndex)
+createPreferencesToModelVariables <- function(problem)
 {
   nrAlternatives <- nrow(problem$performanceTable)
   nrCriteria <- ncol(problem$performanceTable)
@@ -23,9 +23,9 @@ createPreferencesToModelVariables <- function(problem, firstChPointVariableIndex
         {
           if(direction == "g")
           {
-            preferencesToModelVariables[[i,j]][[1]] = c(firstChPointVariableIndex[j] + i - 2, 1.0)
+            preferencesToModelVariables[[i,j]][[1]] = c(problem$criteriaIndices[j] + i - 2, 1.0)
           } else {
-            preferencesToModelVariables[[i,j]][[1]] = c(firstChPointVariableIndex[j] + i - 1, 1.0)
+            preferencesToModelVariables[[i,j]][[1]] = c(problem$criteriaIndices[j] + i - 1, 1.0)
           }
         }
       }
@@ -44,7 +44,7 @@ createPreferencesToModelVariables <- function(problem, firstChPointVariableIndex
           #while for a criterion of type 'cost' best value is on the
           #last index
           offset <- if(direction == "c") 0 else numberOfCharacteristicPoints - 2
-          preferencesToModelVariables[[i,j]][[1]] <- c(firstChPointVariableIndex[j] + offset, 1.0)
+          preferencesToModelVariables[[i,j]][[1]] <- c(problem$criteriaIndices[j] + offset, 1.0)
 
           #least valuable alternative has its score equal to 0, that is why we ommit this this special case
           #least valuable alternative has an empty list in perfToModelVariable matrix
@@ -56,22 +56,22 @@ createPreferencesToModelVariables <- function(problem, firstChPointVariableIndex
           {
             if(characteristicPointIndex > 0)
             {
-              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex - 1, coefficients$lowerValueCoeff)
-              preferencesToModelVariables[[i, j]][[2]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, coefficients$upperValueCoeff)
+              preferencesToModelVariables[[i, j]][[1]] = c(problem$criteriaIndices[j] + characteristicPointIndex - 1, coefficients$lowerValueCoeff)
+              preferencesToModelVariables[[i, j]][[2]] = c(problem$criteriaIndices[j] + characteristicPointIndex, coefficients$upperValueCoeff)
             }
             else
             {
-              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, coefficients$upperValueCoeff)
+              preferencesToModelVariables[[i, j]][[1]] = c(problem$criteriaIndices[j] + characteristicPointIndex, coefficients$upperValueCoeff)
             }
           } else {
             if(characteristicPointIndex < numberOfCharacteristicPoints - 2)
             {
-              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, coefficients$lowerValueCoeff)
-              preferencesToModelVariables[[i, j]][[2]] = c(firstChPointVariableIndex[j] + characteristicPointIndex + 1, coefficients$upperValueCoeff)
+              preferencesToModelVariables[[i, j]][[1]] = c(problem$criteriaIndices[j] + characteristicPointIndex, coefficients$lowerValueCoeff)
+              preferencesToModelVariables[[i, j]][[2]] = c(problem$criteriaIndices[j] + characteristicPointIndex + 1, coefficients$upperValueCoeff)
             }
             else
             {
-              preferencesToModelVariables[[i, j]][[1]] = c(firstChPointVariableIndex[j] + characteristicPointIndex, coefficients$lowerValueCoeff)
+              preferencesToModelVariables[[i, j]][[1]] = c(problem$criteriaIndices[j] + characteristicPointIndex, coefficients$lowerValueCoeff)
             }
           }
         }
@@ -116,12 +116,12 @@ getInterpolationCoefficients <- function(value, minimalValue, intervalLength){
 }
 
 createCriteriaIndices <- function(problem){
-  firstChPointVariableIndex <- c(1)
+  criteriaIndices <- c(1)
   for(i in seq_len(ncol(problem$performanceTable)-1))
   {
-    firstChPointVariableIndex[i+1] <- firstChPointVariableIndex[i] + problem$characteristicPoints[i] - 1
+    criteriaIndices[i+1] <- criteriaIndices[i] + problem$characteristicPoints[i] - 1
   }
-  firstChPointVariableIndex
+  criteriaIndices
 }
 
 buildPairwiseComparisonConstraint <- function(alternative, referenceAlternative, model, type, method) {

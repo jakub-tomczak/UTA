@@ -14,7 +14,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
   numberOfVariables <- problem$numberOfVariables + 1
 
   #preferences to model variables used in solution
-  preferencesToModelVariables <- createPreferencesToModelVariables(problem, firstChPointVariableIndex)
+  preferencesToModelVariables <- createPreferencesToModelVariables(problem)
 
   epsilonIndex <- numberOfVariables
 
@@ -24,9 +24,9 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
 
   for (j in seq_len(nrCriteria)) {
     if (problem$criteria[j] == 'g')
-      lhs[firstChPointVariableIndex[j] + problem$characteristicPoints[j] - 2] <- 1
+      lhs[problem$criteriaIndices[j] + problem$characteristicPoints[j] - 2] <- 1
     else
-      lhs[firstChPointVariableIndex[j]] <- 1
+      lhs[problem$criteriaIndices[j]] <- 1
   }
 
   constraints <- list(lhs = lhs, dir = "==", rhs = 1)
@@ -38,11 +38,11 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
       rhs <- 0
 
       if (problem$criteria[j] == "g") {
-        lhs[firstChPointVariableIndex[j] + k - 1] <- 1
-        lhs[firstChPointVariableIndex[j] + k] <- -1
+        lhs[problem$criteriaIndices[j] + k - 1] <- 1
+        lhs[problem$criteriaIndices[j] + k] <- -1
       } else {
-        lhs[firstChPointVariableIndex[j] + k - 1] <- -1
-        lhs[firstChPointVariableIndex[j] + k] <- 1
+        lhs[problem$criteriaIndices[j] + k - 1] <- -1
+        lhs[problem$criteriaIndices[j] + k] <- 1
       }
 
       if (problem$strictVF) {
@@ -56,9 +56,9 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
     lhs <- rep(0, numberOfVariables)
     rhs <- 0
     if (problem$criteria[j] == 'g')
-      lhs[firstChPointVariableIndex[j]] <- -1
+      lhs[problem$criteriaIndices[j]] <- -1
     else
-      lhs[firstChPointVariableIndex[j] + problem$characteristicPoints[j] - 2] <- -1
+      lhs[problem$criteriaIndices[j] + problem$characteristicPoints[j] - 2] <- -1
 
     if (problem$strictVF) {
       lhs[epsilonIndex] <- 1
@@ -72,7 +72,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
   ## building model
   model <- list(
     constraints = constraints,
-    firstChPointVariableIndex = firstChPointVariableIndex,
+    criteriaIndices = problem$criteriaIndices,
     epsilonIndex = epsilonIndex,
     chPoints = problem$characteristicPoints,
     preferencesToModelVariables = preferencesToModelVariables,

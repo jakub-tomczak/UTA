@@ -90,7 +90,7 @@ toSolution <- function(model, values) {
              lastValue)
     }
 
-    y <- values[model$firstChPointVariableIndex[j] : (model$firstChPointVariableIndex[j] + model$chPoints[j] - 2)]
+    y <- values[model$criteriaIndices[j] : (model$criteriaIndices[j] + model$chPoints[j] - 2)]
 
     if (model$criterionPreferenceDirection[j] == "g") {
       y <- c(0, y)
@@ -108,8 +108,8 @@ toSolution <- function(model, values) {
     for (j in seq_len(nrCriteria)) {
       alternativeValues[i, j] <- 0
 
-      for (k in seq_len(length(model$preferencesToModelVariables[[i, j]]))) {
-        alternativeValues[i, j] <- alternativeValues[i, j] + values[model$preferencesToModelVariables[[i, j]][[k]][1]] * model$preferencesToModelVariables[[i, j]][[k]][2]
+      for (k in seq_len(length(model$criteriaIndices[[i, j]]))) {
+        alternativeValues[i, j] <- alternativeValues[i, j] + values[model$criteriaIndices[[i, j]][[k]][1]] * model$criteriaIndices[[i, j]][[k]][2]
       }
     }
   }

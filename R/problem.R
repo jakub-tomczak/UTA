@@ -18,6 +18,7 @@ buildProblem <- function(performanceTable, criteria, characteristicPoints, stron
   })
   #only the sum of characteristic points from criteria except the least valuable point from each criterion
   problem$numberOfVariables <- sum(characteristicPoints) - length(characteristicPoints)
+  problem$criteriaIndices <- createCriteriaIndices(problem)
 
   return(problem)
 }
