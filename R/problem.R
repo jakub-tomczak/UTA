@@ -2,8 +2,24 @@
 buildProblem <- function(performanceTable, criteria, characteristicPoints, strongPreferences = NULL,
                          weakPreferences = NULL , indifference = NULL)
 {
-  return(validateModel(performanceTable, criteria, strongPreferences,
-                       weakPreferences, characteristicPoints, indifference))
+  problem <- validateModel(performanceTable, criteria, strongPreferences,
+                           weakPreferences, characteristicPoints, indifference)
+
+  nrAlternatives <- nrow(problem$performanceTable)
+  #contains TRUE on indices corresponding to the criteria that has no characteristicPoints
+  problem$generalVF <- problem$characteristicPoints == 0
+  #if there is not stated how many characteristic points we've got on a criterion
+  #assume that there are as many as alternatives (each alternative is a characteristic point)
+  problem$characteristicPoints <- sapply(problem$characteristicPoints, function(x) {
+    if(x == 0)
+      nrAlternatives
+    else
+      x
+  })
+  #only the sum of characteristic points from criteria except the least valuable point from each criterion
+  problem$numberOfVariables <- sum(characteristicPoints) - length(characteristicPoints)
+
+  return(problem)
 }
 
 #' @export
@@ -26,14 +42,12 @@ validateModel <- function(performanceTable, criteria, strongPreferences,
 
   assert(is.matrix(indifference), "Indifference must be a matrix")
 
-  numberOfVariablesFromCharacteristicPoints <- sum(characteristicPoints) - length(characteristicPoints)
   return (list(
     performanceTable = performanceTable,
     criteria = criteria,
+    characteristicPoints = characteristicPoints,
     strongPreferences = strongPreferences,
     weakPreferences = weakPreferences,
-    characteristicPoints = characteristicPoints,
-    numberOfVariables = numberOfVariablesFromCharacteristicPoints,
     indifference = indifference,
     strictVF = TRUE
   ))

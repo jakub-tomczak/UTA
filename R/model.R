@@ -9,26 +9,6 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
   nrAlternatives <- nrow(problem$performanceTable)
   nrCriteria <- ncol(problem$performanceTable)
 
-  firstChPointVariableIndex <- c(1)
-
-  #if there is not stated how many characteristic points we've got on a criterion
-  #assume that there are as many as alternatives (each alternative is a characteristic point)
-  characteristicPoints <- sapply(problem$characteristicPoints, function(x) {
-    if(x == 0)
-      nrAlternatives
-    else
-      x
-  })
-
-
-  characteristicPoints <- c(4,2)
-  #save first indices of the following criteria to ease putting coefficients in the right places
-  firstChPointVariableIndex <- c(1)
-  for(i in seq_len(nrCriteria-1))
-  {
-    firstChPointVariableIndex[i+1] <- firstChPointVariableIndex[i] + characteristicPoints[i] - 1
-  }
-
   #problem gets into consideration only the number of characteristic points from value functions
   #here we add one variable that corresponds to epsilion value
   numberOfVariables <- problem$numberOfVariables + 1
@@ -44,7 +24,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
 
   for (j in seq_len(nrCriteria)) {
     if (problem$criteria[j] == 'g')
-      lhs[firstChPointVariableIndex[j] + characteristicPoints[j] - 2] <- 1
+      lhs[firstChPointVariableIndex[j] + problem$characteristicPoints[j] - 2] <- 1
     else
       lhs[firstChPointVariableIndex[j]] <- 1
   }
@@ -53,7 +33,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
 
   ## monotonicity of vf
   for (j in seq_len(nrCriteria)) {
-    for (k in seq_len(characteristicPoints[j] - 2)) {
+    for (k in seq_len(problem$characteristicPoints[j] - 2)) {
       lhs <- rep(0, numberOfVariables)
       rhs <- 0
 
@@ -78,7 +58,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
     if (problem$criteria[j] == 'g')
       lhs[firstChPointVariableIndex[j]] <- -1
     else
-      lhs[firstChPointVariableIndex[j] + characteristicPoints[j] - 2] <- -1
+      lhs[firstChPointVariableIndex[j] + problem$characteristicPoints[j] - 2] <- -1
 
     if (problem$strictVF) {
       lhs[epsilonIndex] <- 1
@@ -94,11 +74,11 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
     constraints = constraints,
     firstChPointVariableIndex = firstChPointVariableIndex,
     epsilonIndex = epsilonIndex,
-    chPoints = characteristicPoints,
+    chPoints = problem$characteristicPoints,
     preferencesToModelVariables = preferencesToModelVariables,
     criterionPreferenceDirection = problem$criteria,
     prefInfoToConstraints = list(),
-    generalVF = problem$characteristicPoints == 0,
+    generalVF = problem$generalVF,
     minEpsilon = minEpsilon
   )
 

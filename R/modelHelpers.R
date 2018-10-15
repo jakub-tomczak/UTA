@@ -115,6 +115,15 @@ getInterpolationCoefficients <- function(value, minimalValue, intervalLength){
   return(c(1-coeff, coeff))
 }
 
+createCriteriaIndices <- function(problem){
+  firstChPointVariableIndex <- c(1)
+  for(i in seq_len(ncol(problem$performanceTable)-1))
+  {
+    firstChPointVariableIndex[i+1] <- firstChPointVariableIndex[i] + problem$characteristicPoints[i] - 1
+  }
+  firstChPointVariableIndex
+}
+
 buildPairwiseComparisonConstraint <- function(alternative, referenceAlternative, model, type, method) {
   stopifnot(type %in% c("weakPreference", "strongPreference", "indifference"))
   #-1 to remove epsilion index
