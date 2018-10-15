@@ -10,31 +10,32 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
   nrCriteria <- ncol(problem$performanceTable)
 
   firstChPointVariableIndex <- c(1)
-  chPoints <- c()
 
-  #calculate characteristic points indices
-  for (j in seq_len(nrCriteria)) {
-    numberOfCharacteristicPoints <- problem$characteristicPoints[j]
+  #if there is not stated how many characteristic points we've got on a criterion
+  #assume that there are as many as alternatives (each alternative is a characteristic point)
+  characteristicPoints <- sapply(problem$characteristicPoints, function(x) {
+    if(x == 0)
+      nrAlternatives
+    else
+      x
+  })
 
-    if (numberOfCharacteristicPoints == 0) { #jeżeli nie wiadomo ile jest punktów charakterystycznych to załóż, że jest tyle ile jest kryteriów de facto
-      numberOfCharacteristicPoints <- length(problem$performanceTable[[j]])
-    }
 
-    if (j != nrCriteria) { #jeżeli nie jesteśmy w ostatnim przejściu pętli
-      #kolejny punkt charakterystyczny to aktualny + liczba punktów charakterystycznych dla tego kryterium -1
-      firstChPointVariableIndex[j + 1] <- firstChPointVariableIndex[j] + numberOfCharacteristicPoints - 1
-    }
-
-    chPoints[j] <- numberOfCharacteristicPoints
+  characteristicPoints <- c(4,2)
+  #save first indices of the following criteria to ease putting coefficients in the right places
+  firstChPointVariableIndex <- c(1)
+  for(i in seq_len(nrCriteria-1))
+  {
+    firstChPointVariableIndex[i+1] <- firstChPointVariableIndex[i] + characteristicPoints[i] - 1
   }
 
+  #problem gets into consideration only the number of characteristic points from value functions
+  #here we add one variable that corresponds to epsilion value
   numberOfVariables <- problem$numberOfVariables + 1
 
   #preferences to model variables used in solution
   preferencesToModelVariables <- createPreferencesToModelVariables(problem, firstChPointVariableIndex)
 
-  # epsilon index
-  numberOfVariables <- numberOfVariables + 1
   epsilonIndex <- numberOfVariables
 
   # constraints
@@ -43,7 +44,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
 
   for (j in seq_len(nrCriteria)) {
     if (problem$criteria[j] == 'g')
-      lhs[firstChPointVariableIndex[j] + chPoints[j] - 2] <- 1
+      lhs[firstChPointVariableIndex[j] + characteristicPoints[j] - 2] <- 1
     else
       lhs[firstChPointVariableIndex[j]] <- 1
   }
@@ -52,7 +53,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
 
   ## monotonicity of vf
   for (j in seq_len(nrCriteria)) {
-    for (k in seq_len(chPoints[j] - 2)) {
+    for (k in seq_len(characteristicPoints[j] - 2)) {
       lhs <- rep(0, numberOfVariables)
       rhs <- 0
 
@@ -77,7 +78,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
     if (problem$criteria[j] == 'g')
       lhs[firstChPointVariableIndex[j]] <- -1
     else
-      lhs[firstChPointVariableIndex[j] + chPoints[j] - 2] <- -1
+      lhs[firstChPointVariableIndex[j] + characteristicPoints[j] - 2] <- -1
 
     if (problem$strictVF) {
       lhs[epsilonIndex] <- 1
@@ -93,7 +94,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
     constraints = constraints,
     firstChPointVariableIndex = firstChPointVariableIndex,
     epsilonIndex = epsilonIndex,
-    chPoints = chPoints,
+    chPoints = characteristicPoints,
     preferencesToModelVariables = preferencesToModelVariables,
     criterionPreferenceDirection = problem$criteria,
     prefInfoToConstraints = list(),

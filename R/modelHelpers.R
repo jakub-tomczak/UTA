@@ -79,6 +79,7 @@ createPreferencesToModelVariables <- function(problem, firstChPointVariableIndex
     }
   }
   return(preferencesToModelVariables)
+}
 
 getLowerAndUpperValuesCoefficients <- function(value, minimalValue, intervalLength, direction, characteristicPointIndex){
   assert(direction %in% c("c", "g"), "Direction must be of type `c` or `g`.")
