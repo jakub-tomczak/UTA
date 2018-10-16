@@ -1,7 +1,7 @@
 #' @import Rglpk
 extremizeVariable <- function(objective, constraints, maximize) {
   Rglpk_solve_LP(objective, constraints$lhs, constraints$dir, constraints$rhs, max = maximize,
-                 types = constraints$types)
+                 types = constraints$variablesType)
 }
 
 isModelConsistent <- function(model) {
@@ -24,11 +24,16 @@ createObjective <- function(numberOfConstraints, extremizedVariableIndex){
   obj
 }
 
+#this function takes model and values variable that is a vector with
+#LP problem solutions
+#comprehensiveValue is a vector containing on each index a
+#dot product of a marginal value function's coefficient and an alternative's coefficient
+
 getRanksFromF <- function(model, values, accuracy = 1e-16) {
   nrVariables <- ncol(model$constraints$lhs)
   nrAlternatives <- nrow(model$preferencesToModelVariables)
 
-  comprehensiveValue <- sapply(seq_len(nrAlternatives), function(i) {return (sum(ua(i, nrVariables, model$preferencesToModelVariables) * values) )} )
+  comprehensiveValue <- sapply(seq_len(nrAlternatives), function(i) {return (dot(ua(i, model$preferencesToModelVariables), values) )} )
 
   ranks <- sapply(seq_len(nrAlternatives), function(i) {
     rank <- 1
@@ -81,6 +86,7 @@ toSolution <- function(model, values) {
     if (model$generalVF[j]) {
       x <- sapply(model$criterionValues[[j]], function(w) { w$value })
     } else {
+      #there were no charactiristic points on this criterion
       firstValue <- model$criterionValues[[j]][[1]]$value
       lastValue <- model$criterionValues[[j]][[length(model$criterionValues[[j]])]]$value
       intervalLength <- (lastValue - firstValue) / (model$chPoints[j] - 1)

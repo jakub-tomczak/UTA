@@ -6,17 +6,20 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
   {
     stop("Method must be on of the following: `uta`, `utamp-1`, `utamp-2`")
   }
-  nrAlternatives <- nrow(problem$performanceTable)
-  nrCriteria <- ncol(problem$performanceTable)
+  nrAlternatives <- nrow(problem$performance)
+  nrCriteria <- ncol(problem$performance)
 
-  #problem gets into consideration only the number of characteristic points from value functions
-  #here we add one variable that corresponds to epsilion value
-  numberOfVariables <- problem$numberOfVariables + 1
 
   #preferences to model variables used in solution
-  preferencesToModelVariables <- createPreferencesToModelVariables(problem)
+  coefficientsMatrix <- calculateCoefficientsMatrix(problem)
 
+  #when constructing problem we get into consideration only the number of characteristic points from value functions
+  #we don't consider epsilon
+  #here we add one variable that corresponds to epsilion value
+  numberOfVariables <- problem$numberOfVariables + 1
   epsilonIndex <- numberOfVariables
+  #and add epsilon column
+  coefficientsMatrix <- cbind(coefficientsMatrix, 0)
 
   # constraints
   ## sum to 1
@@ -24,7 +27,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
 
   for (j in seq_len(nrCriteria)) {
     if (problem$criteria[j] == 'g')
-      lhs[problem$criteriaIndices[j] + problem$characteristicPoints[j] - 2] <- 1
+      lhs[problem$criteriaIndices[j] + problem$characteristicPoints[j] - 1] <- 1
     else
       lhs[problem$criteriaIndices[j]] <- 1
   }
@@ -33,7 +36,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
 
   ## monotonicity of vf
   for (j in seq_len(nrCriteria)) {
-    for (k in seq_len(problem$characteristicPoints[j] - 2)) {
+    for (k in seq_len(problem$characteristicPoints[j] - 1)) {
       lhs <- rep(0, numberOfVariables)
       rhs <- 0
 
@@ -52,22 +55,29 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
       constraints <- combineConstraints(constraints,
                                         list(lhs = lhs, dir = "<=", rhs = rhs))
     }
-
-    lhs <- rep(0, numberOfVariables)
-    rhs <- 0
-    if (problem$criteria[j] == 'g')
-      lhs[problem$criteriaIndices[j]] <- -1
-    else
-      lhs[problem$criteriaIndices[j] + problem$characteristicPoints[j] - 2] <- -1
-
-    if (problem$strictVF) {
-      lhs[epsilonIndex] <- 1
-    }
-    constraints <- combineConstraints(constraints,
-                                      list(lhs = lhs, dir = "<=", rhs = rhs))
   }
 
-  constraints$types <- rep("C", numberOfVariables) #continous
+  constraints$variablesTypes <- rep("C", numberOfVariables) #continous criteria
+
+  #remove least valuable characteristic points from coefficientMatri and criteria indices
+  leastValuableCharacteristicPoints <- c()
+  for(criterion in seq_len(nrCriteria)){
+    if(problem$criteria[criterion] == 'g'){
+      leastValuableCharacteristicPoints <- c(leastValuableCharacteristicPoints, problem$criteriaIndices[criterion])
+    } else {
+      leastValuableCharacteristicPoints <- c(leastValuableCharacteristicPoints, problem$criteriaIndices[criterion] + problem$characteristicPoints[criterion] - 1)
+    }
+  }
+  problem$criteriaIndices <- createCriteriaIndices(problem, substractZeroCoefficients=TRUE)
+  coefficientsMatrix <- coefficientsMatrix[,-leastValuableCharacteristicPoints]
+  #remove as many variables as columns
+  numberOfVariables <- numberOfVariables - length(leastValuableCharacteristicPoints)
+  #update epsilion value
+  epsilonIndex <- numberOfVariables
+  #update constraints - remove least valuable variables, update constraints types
+  constraints$lhs <- constraints$lhs[, -leastValuableCharacteristicPoints]
+  constraints$variablesTypes <- constraints$variablesTypes[-leastValuableCharacteristicPoints]
+
 
   ## building model
   model <- list(
@@ -75,30 +85,25 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
     criteriaIndices = problem$criteriaIndices,
     epsilonIndex = epsilonIndex,
     chPoints = problem$characteristicPoints,
-    preferencesToModelVariables = preferencesToModelVariables,
+    preferencesToModelVariables = coefficientsMatrix,
     criterionPreferenceDirection = problem$criteria,
-    prefInfoToConstraints = list(),
     generalVF = problem$generalVF,
     minEpsilon = minEpsilon
   )
 
   # preference information
-
-  ## assignment examples
-
-  prefInfoIndex <- 1
+  #prefInfoIndex <- 1
 
   if (is.matrix(problem$strongPreference)) {
     for (k in seq_len(nrow(problem$strongPreference))) {
       alternative <- problem$strongPreference[k, 1]
       referenceAlternative <- problem$strongPreference[k, 2]
-
       model$constraints <- combineConstraints(model$constraints,
                                               buildPairwiseComparisonConstraint(alternative, referenceAlternative,
-                                                                                model, type = "strongPreference", method))
+                                                                                model, preferenceType = "strong"))
 
-      model$prefInfoToConstraints[[prefInfoIndex]] <- nrow(model$constraints$lhs)
-      prefInfoIndex <- prefInfoIndex + 1
+      #model$prefInfoToConstraints[[prefInfoIndex]] <- nrow(model$constraints$lhs)
+      #prefInfoIndex <- prefInfoIndex + 1
     }
   }
 
@@ -109,10 +114,10 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
 
       model$constraints <- combineConstraints(model$constraints,
                                               buildPairwiseComparisonConstraint(alternative, referenceAlternative,
-                                                                                model, type = "weakPreference", method))
+                                                                                model, preferenceType = "weak"))
 
-      model$prefInfoToConstraints[[prefInfoIndex]] <- nrow(model$constraints$lhs)
-      prefInfoIndex <- prefInfoIndex + 1
+      #model$prefInfoToConstraints[[prefInfoIndex]] <- nrow(model$constraints$lhs)
+      #prefInfoIndex <- prefInfoIndex + 1
     }
   }
 
@@ -123,12 +128,11 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
 
       model$constraints <- combineConstraints(model$constraints,
                                               buildPairwiseComparisonConstraint(alternative, referenceAlternative,
-                                                                                model, type = "indifference", method))
+                                                                                model, preferenceType = "indifference"))
 
-      model$prefInfoToConstraints[[prefInfoIndex]] <- nrow(model$constraints$lhs)
-      prefInfoIndex <- prefInfoIndex + 1
+      #model$prefInfoToConstraints[[prefInfoIndex]] <- nrow(model$constraints$lhs)
+      #prefInfoIndex <- prefInfoIndex + 1
     }
   }
-
-  return (model)
+  return(model)
 }

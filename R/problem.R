@@ -5,8 +5,9 @@ buildProblem <- function(performanceTable, criteria, characteristicPoints, stron
   problem <- validateModel(performanceTable, criteria, strongPreferences,
                            weakPreferences, characteristicPoints, indifference)
 
-  nrAlternatives <- nrow(problem$performanceTable)
+  nrAlternatives <- nrow(problem$performance)
   #contains TRUE on indices corresponding to the criteria that has no characteristicPoints
+  #keep this information in order to calculate the solution properly
   problem$generalVF <- problem$characteristicPoints == 0
   #if there is not stated how many characteristic points we've got on a criterion
   #assume that there are as many as alternatives (each alternative is a characteristic point)
@@ -17,8 +18,8 @@ buildProblem <- function(performanceTable, criteria, characteristicPoints, stron
       x
   })
   #only the sum of characteristic points from criteria except the least valuable point from each criterion
-  problem$numberOfVariables <- sum(characteristicPoints) - length(characteristicPoints)
-  problem$criteriaIndices <- createCriteriaIndices(problem)
+  problem$numberOfVariables <- sum(problem$characteristicPoints)
+  problem$criteriaIndices <- createCriteriaIndices(problem, substractZeroCoefficients=FALSE)
 
   return(problem)
 }

@@ -2,6 +2,8 @@
 #' @export
 utag <- function(model, allowInconsistency = FALSE)
 {
+  stop("Not implemented yet")
+
   nrCriteria <- length(model$criterionPreferenceDirection)
   criteriaAuxiliaryMarginalValues <- matrix(0, nrow=nrCriteria, ncol=2)
   for (j in seq_len(nrCriteria))
@@ -25,6 +27,7 @@ utag <- function(model, allowInconsistency = FALSE)
 #UTAMP-1
 #' @export
 utamp1 <- function(model, allowInconsistency = FALSE) {
+  stop("Not implemented yet")
   if (is.null(model$epsilonIndex)) {
     stop("Use function buildModel with includeEpsilonAsVariable = TRUE.")
   }
@@ -38,6 +41,8 @@ utamp1 <- function(model, allowInconsistency = FALSE) {
 #UTAMP-2
 #' @export
 utamp2 <- function(model, allowInconsistency = FALSE) {
+  stop("Not implemented yet")
+
   obj <- rep(0, ncol(constraints$lhs))
   obj[variableIndex] <- 1
   solution <- extremizeVariable(model$constraints, model$epsilonIndex, obj, TRUE)
