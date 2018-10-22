@@ -68,7 +68,10 @@ getCharacteristicPointValueAndIndex <- function(value, typeOfBoundToFind, charac
 
 calculateCoefficient <- function(value, thresholdValue, interval){
   distance <- thresholdValue - value
-  assert(abs(distance) <= interval, "Distance between value and threshold cannot be higher then the interval.")
+  #hack, avoid rounding numerical error that are lesser than the additionalEpsilon
+  #they happen when alternative's value is at characteristic point
+  additionalEpsilon <- 1e-9
+  assert(abs(distance) <= interval + additionalEpsilon, "Distance between value and threshold cannot be higher then the interval.")
   1 - (abs(distance)/interval)
 }
 
