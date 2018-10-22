@@ -27,7 +27,6 @@ utag <- function(model, allowInconsistency = FALSE)
 #UTAMP-1
 #' @export
 utamp1 <- function(model, allowInconsistency = FALSE) {
-  stop("Not implemented yet")
   if (is.null(model$epsilonIndex)) {
     stop("Use function buildModel with includeEpsilonAsVariable = TRUE.")
   }

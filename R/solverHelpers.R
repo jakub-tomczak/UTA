@@ -4,19 +4,6 @@ extremizeVariable <- function(objective, constraints, maximize) {
                  types = constraints$variablesType)
 }
 
-isModelConsistent <- function(model) {
-  if (all(model$constraints$lhs[, model$epsilonIndex] == 0)) {
-    # epsilon is not used, but still the model can be feasible
-    ret <- extremizeVariable(model$constraints, model$epsilonIndex - 1, TRUE)
-
-    return (ret$status == 0)
-  } else {
-    ret <- maximizeEpsilon(model)
-
-    return (ret$status == 0 && ret$optimum >= model$minEpsilon)
-  }
-}
-
 createObjective <- function(numberOfConstraints, extremizedVariableIndex){
   assert(!is.null(extremizedVariableIndex), 'Variable to extremize is NULL')
   obj <- rep(0, ncol(numberOfConstraints))
@@ -28,46 +15,42 @@ createObjective <- function(numberOfConstraints, extremizedVariableIndex){
 #LP problem solutions
 #comprehensiveValue is a vector containing on each index a
 #dot product of a marginal value function's coefficient and an alternative's coefficient
+generateRanking <- function(utilityValues) {
+  ranking <- sort(utilityValues, decreasing = TRUE, index.return = TRUE)
+  #values are places in the ranking
+  ranking$alternativeToRanking <- rep(0, length(utilityValues))
+  names(ranking) <- c("utilityValue", "ranking", "alternativeToRanking")
 
-getRanksFromF <- function(model, values, accuracy = 1e-16) {
-  nrVariables <- ncol(model$constraints$lhs)
-  nrAlternatives <- nrow(model$preferencesToModelVariables)
+  for(x in seq_len(length(utilityValues))){
+    ranking$alternativeToRanking[ranking$ranking[x]] <- x
+  }
 
-  comprehensiveValue <- sapply(seq_len(nrAlternatives), function(i) {return (dot(ua(i, model$preferencesToModelVariables), values) )} )
+  ranking
+}
 
-  ranks <- sapply(seq_len(nrAlternatives), function(i) {
-    rank <- 1
-    for (j in seq_len(nrAlternatives)) {
-      if (i != j && comprehensiveValue[j] - comprehensiveValue[i] > accuracy) {
-        rank <- rank + 1
-      }
-    }
-
-    return (rank)
-  } )
-
-  return (ranks)
+calculateUtilityValues <- function(model, values){
+  # v1 %*% v2 => dot product of v1 and v2
+  # alternative are in rows, columns represents criteria, values are utility values of the alternative on that criterion
+  utilityValues <- sapply(seq_len(length(model$criteriaIndices)), function(y){
+    sapply(seq_len(nrow(model$preferencesToModelVariables)), function(alternative)
+    {
+      #from and to are used to index a criterion's marginal values coefficients on a preferences matrix
+      from <- model$criteriaIndices[y]
+      #minus (1 - beacuse of the fact we ommit the least value characterisitc point, 1 - last index is included)
+      to <- from + model$chPoints[y]-2
+      model$preferencesToModelVariables[alternative, from:to] %*% values[from:to]
+    })
+  })
 }
 
 #' @export
 toSolution <- function(model, values) {
-  nrVariables <- ncol(model$constraints$lhs)
-  nrAlternatives <- nrow(model$preferencesToModelVariables)
-  nrCriteria <- ncol(model$preferencesToModelVariables)
-
-  if (!is.null(model$epsilonIndex) && length(values) == nrVariables - 1) {
-    model <- eliminateEpsilon(model)
-    nrVariables <- ncol(model$constraints$lhs)
-  }
-
-  stopifnot(length(values) == nrVariables)
-
+  #calculate alternatives utility values
+  localUtilityValues <- calculateUtilityValues(model, values)
+  globalUtilityValues <- apply(localUtilityValues, MARGIN = 1, function(x){ sum(x) })
   #ranks
-
-  ranks <- getRanksFromF(model, values)
-
+  ranking <- generateRanking(globalUtilityValues)
   # epsilon
-
   epsilon <- NULL
 
   if (!is.null(model$epsilonIndex)) {
@@ -76,81 +59,14 @@ toSolution <- function(model, values) {
     epsilon <- model$minEpsilon
   }
 
-  # vf
-
-  vf <- list()
-
-  for (j in seq_len(nrCriteria)) {
-    nrValues <- length(model$criterionValues[[j]])
-
-    if (model$generalVF[j]) {
-      x <- sapply(model$criterionValues[[j]], function(w) { w$value })
-    } else {
-      #there were no charactiristic points on this criterion
-      firstValue <- model$criterionValues[[j]][[1]]$value
-      lastValue <- model$criterionValues[[j]][[length(model$criterionValues[[j]])]]$value
-      intervalLength <- (lastValue - firstValue) / (model$chPoints[j] - 1)
-
-      x <- c(firstValue,
-             unlist(sapply(seq_len(model$chPoints[j] - 2), function(w) { firstValue + intervalLength * w })),
-             lastValue)
-    }
-
-    y <- values[model$criteriaIndices[j] : (model$criteriaIndices[j] + model$chPoints[j] - 2)]
-
-    if (model$criterionPreferenceDirection[j] == "g") {
-      y <- c(0, y)
-    } else {
-      y <- c(y, 0)
-    }
-
-    vf[[j]] <- cbind(x, y)
-  }
-
-  # alternative values
-  alternativeValues <- matrix(nrow=nrAlternatives, ncol=nrCriteria)
-
-  for (i in seq_len(nrAlternatives)) {
-    for (j in seq_len(nrCriteria)) {
-      alternativeValues[i, j] <- 0
-
-      for (k in seq_len(length(model$criteriaIndices[[i, j]]))) {
-        alternativeValues[i, j] <- alternativeValues[i, j] + values[model$criteriaIndices[[i, j]][[k]][1]] * model$criteriaIndices[[i, j]][[k]][2]
-      }
-    }
-  }
-
   return (list(
-    vf = vf,
-    ranks = ranks,
-    alternativeValues = alternativeValues,
+    ranking = ranking,
+    utilityValues = globalUtilityValues,
+    localUtilityValues = localUtilityValues,
     solution = values,
     epsilon = epsilon,
     generalVF = model$generalVF
   ))
-}
-
-#' @export
-ranksToRanking <- function(ranks) {
-  result <- c()
-  altOrder <- order(ranks)
-  prevRank <- -1
-
-  for (alt in altOrder) {
-    if (length(result) > 0) {
-      if (prevRank == ranks[alt]) {
-        result <- c(result, ",")
-      } else {
-        result <- c(result, "-")
-      }
-    }
-
-    prevRank <- ranks[alt]
-
-    result <- c(result, alt)
-  }
-
-  return (paste(result, collapse = ""))
 }
 
 #' @export
