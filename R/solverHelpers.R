@@ -16,68 +16,58 @@ createObjective <- function(numberOfConstraints, extremizedVariableIndex){
 #comprehensiveValue is a vector containing on each index a
 #dot product of a marginal value function's coefficient and an alternative's coefficient
 generateRanking <- function(utilityValues) {
+  nrAlternatives <- length(utilityValues)
   ranking <- sort(utilityValues, decreasing = TRUE, index.return = TRUE)
-  #values are places in the ranking
-  ranking$alternativeToRanking <- rep(0, length(utilityValues))
-  names(ranking) <- c("utilityValue", "ranking", "alternativeToRanking")
+  rankingMatrix <- matrix(utilityValues)
 
-  for(x in seq_len(length(utilityValues))){
-    ranking$alternativeToRanking[ranking$ranking[x]] <- x
+  alternativeToRanking <- rep(0, nrAlternatives)
+  for(x in seq_len(nrAlternatives)){
+    alternativeToRanking[ranking$ix[x]] <- x
   }
-
-  ranking
+  rankingMatrix <- cbind(c(1:nrAlternatives), rankingMatrix, alternativeToRanking)
+  colnames(rankingMatrix) <- c("alternativeNo.", "utilityValue", "ranking")
+  rankingMatrix
 }
 
+#values attained from LP solution
+#number of these values corresponds to the number of columns in the model$preferencesToModelVariables
 calculateUtilityValues <- function(model, values){
   # v1 %*% v2 => dot product of v1 and v2
   # alternative are in rows, columns represents criteria, values are utility values of the alternative on that criterion
   utilityValues <- sapply(seq_len(length(model$criteriaIndices)), function(y){
-    sapply(seq_len(nrow(model$preferencesToModelVariables)), function(alternative)
-    {
-      #from and to are used to index a criterion's marginal values coefficients on a preferences matrix
-      from <- model$criteriaIndices[y]
-      #minus (1 - beacuse of the fact we ommit the least value characterisitc point, 1 - last index is included)
-      to <- from + model$chPoints[y]-2
-      model$preferencesToModelVariables[alternative, from:to] %*% values[from:to]
-    })
+    calculateUtilityValuesOnCriterion(model, values, y)
   })
 }
 
-#' @export
-toSolution <- function(model, values) {
-  #calculate alternatives utility values
-  localUtilityValues <- calculateUtilityValues(model, values)
-  globalUtilityValues <- apply(localUtilityValues, MARGIN = 1, function(x){ sum(x) })
-  #ranks
-  ranking <- generateRanking(globalUtilityValues)
-  # epsilon
-  epsilon <- NULL
+#allows multiplying
+calculateUtilityValuesOnCriterion <- function(model, value, criterionNumber){
+  sapply(seq_len(nrow(model$preferencesToModelVariables)), function(alternative)
+  {
+    #from and to are used to index a criterion's marginal values coefficients on a preferences matrix
+    from <- model$criteriaIndices[criterionNumber]
+    #minus (1 - beacuse of the fact we ommit the least value characterisitc point, 1 - last index is included)
+    to <- from + model$chPoints[criterionNumber]-2
 
-  if (!is.null(model$epsilonIndex)) {
-    epsilon <- values[model$epsilonIndex]
-  } else {
-    epsilon <- model$minEpsilon
-  }
-
-  return (list(
-    ranking = ranking,
-    utilityValues = globalUtilityValues,
-    localUtilityValues = localUtilityValues,
-    solution = values,
-    epsilon = epsilon,
-    generalVF = model$generalVF
-  ))
+    if(length(value) == 1){
+      #multiplying by number
+      sum(model$preferencesToModelVariables[alternative, from:to] * value)
+    } else{
+      assert(ncol(model$preferencesToModelVariables) == length(value),
+             "If value is a vector it must represent the same number of coefficients as in the preferencesToModelVariables.")
+      #multiplying by vector
+      model$preferencesToModelVariables[alternative, from:to] %*% value[from:to]
+    }
+  })
 }
 
-#' @export
-getSolutionOrError <- function(solution, allowInconsistency){
+validateSolution <- function(solution, allowInconsistency){
   if(is.null(solution))
   {
     stop("Solution object is empty.")
   }
   else if ((solution$status == 0 && solution$optimum >= model$minEpsilon) || allowInconsistency)
   {
-    return (toSolution(model, solution$solution))
+    return(TRUE)
   }
   else if(solution$status != 0)
   {
@@ -93,6 +83,7 @@ getSolutionOrError <- function(solution, allowInconsistency){
   }
   else
   {
-    stop("Unknown error.")
+    print("Unknown error.")
+    return(FALSE)
   }
 }

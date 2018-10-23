@@ -33,8 +33,20 @@ utamp1 <- function(model, allowInconsistency = FALSE) {
 
   objective <- createObjective(model$constraints$lhs, model$epsilonIndex)
   solution <- extremizeVariable(objective, model$constraints, maximize=TRUE)
+  methodResult <- list()
 
-  return(getSolutionOrError(solution, allowInconsistency))
+  if(validateSolution(solution, allowInconsistency)){
+    methodResult$localUtilityValues <- calculateUtilityValues(model, solution$solution)
+    globalUtilityValues <- utilityValues <- apply(methodResult$localUtilityValues, MARGIN = 1, function(x){ sum(x) })
+    methodResult$ranking <- generateRanking(globalUtilityValues)
+    #method specific functionality
+    if (!is.null(model$epsilonIndex)) {
+      methodResult$epsilon <- solution$solution[model$epsilonIndex]
+    } else {
+      methodResult$epsilon <- model$minEpsilon
+    }
+  }
+  methodResult
 }
 
 #UTAMP-2

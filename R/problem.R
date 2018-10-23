@@ -24,7 +24,6 @@ buildProblem <- function(performanceTable, criteria, characteristicPoints, stron
   return(problem)
 }
 
-#' @export
 validateModel <- function(performanceTable, criteria, strongPreferences,
                           weakPreferences, characteristicPoints, indifference)
 {
