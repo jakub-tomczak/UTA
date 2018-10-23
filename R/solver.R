@@ -2,26 +2,36 @@
 #' @export
 utag <- function(model, allowInconsistency = FALSE)
 {
-  stop("Not implemented yet")
-
   nrCriteria <- length(model$criterionPreferenceDirection)
-  criteriaAuxiliaryMarginalValues <- matrix(0, nrow=nrCriteria, ncol=2)
+  nrAlternative <- nrow(model$preferencesToModelVariables)
+  partialUtilityValues <- matrix(0, nrow = nrAlternative, ncol = nrCriteria)
+  methodResult <- list()
+
   for (j in seq_len(nrCriteria))
   {
-    if(model$criterionPreferenceDirection[j] == 'g')
-    {
+    if(model$criterionPreferenceDirection[j] == 'c') {
       extremizedCriterionIndex <- model$criteriaIndices[j]
     } else {
       extremizedCriterionIndex <- model$criteriaIndices[j] + model$chPoints[j] - 2
     }
     objective <- createObjective(model$constraints$lhs, extremizedCriterionIndex)
-    solutionMinRaw <- extremizeVariable(objective, model$constraints, maximize=FALSE)
-    solutionMaxRaw <- extremizeVariable(objective, model$constraints, maximize=TRUE)
-    solutionMin = getSolutionOrError(solutionMinRaw, allowInconsistency)
-    solutionMax = getSolutionOrError(solutionMaxRaw, allowInconsistency)
-    criteriaAuxiliaryMarginalValues[j, ] <- c(solutionMin$solution[extremizedCriterionIndex] , solutionMax$solution[extremizedCriterionIndex])
+    solutionMin <- extremizeVariable(objective, model$constraints, maximize=FALSE)
+    solutionMax <- extremizeVariable(objective, model$constraints, maximize=TRUE)
+    #add appropriate from min and max solution
+    partialUtilityValues[, j] <- partialUtilityValues[, j] + calculateUtilityValuesOnCriterion(model, solutionMin$solution, j)
+    partialUtilityValues[, j] <- partialUtilityValues[, j] + calculateUtilityValuesOnCriterion(model, solutionMax$solution, j)
   }
-  return(criteriaAuxiliaryMarginalValues)
+  #divide each column by the number of criteria
+  partialUtilityValues <- apply(partialUtilityValues, MARGIN = 2, function(x){
+    x / nrCriteria
+  })
+
+  #calculate global utility values = sum values by rows = sum partial utility values for each alternative
+  utilityValues <- apply(partialUtilityValues, MARGIN = 1, function(x){
+    sum(x) / 2
+  })
+  methodResult$ranking <- generateRanking(utilityValues)
+  methodResult
 }
 
 #UTAMP-1
