@@ -11,3 +11,4 @@ LazyData: true
 Depends: Rglpk (>= 0.5-1), hitandrun (>= 0.5-2)
 Suggests: 
     testthat
+RoxygenNote: 6.1.0
