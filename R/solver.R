@@ -37,11 +37,13 @@ utag <- function(model, allowInconsistency = FALSE)
 #UTAMP-1
 #' @export
 utamp1 <- function(model, allowInconsistency = FALSE) {
-  if (is.null(model$epsilonIndex)) {
+  objectiveIndex <- c(model$kIndex)
+  if (is.null(objectiveIndex)) {
     stop("Use function buildModel with includeEpsilonAsVariable = TRUE.")
   }
 
-  objective <- createObjective(model$constraints$lhs, model$epsilonIndex)
+  objectiveIndex <- c(model$kIndex)
+  objective <- createObjective(model$constraints$lhs, objectiveIndex)
   solution <- extremizeVariable(objective, model$constraints, maximize=TRUE)
   methodResult <- list()
 
@@ -50,11 +52,9 @@ utamp1 <- function(model, allowInconsistency = FALSE) {
     globalUtilityValues <- utilityValues <- apply(methodResult$localUtilityValues, MARGIN = 1, function(x){ sum(x) })
     methodResult$ranking <- generateRanking(globalUtilityValues)
     #method specific functionality
-    if (!is.null(model$epsilonIndex)) {
-      methodResult$epsilon <- solution$solution[model$epsilonIndex]
-    } else {
-      methodResult$epsilon <- model$minEpsilon
-    }
+
+    methodResult$epsilon <- solution$solution[objectiveIndex]
+
   }
   methodResult
 }
@@ -62,11 +62,19 @@ utamp1 <- function(model, allowInconsistency = FALSE) {
 #UTAMP-2
 #' @export
 utamp2 <- function(model, allowInconsistency = FALSE) {
-  stop("Not implemented yet")
+  objectiveIndex <- c(model$roIndex, model$kIndex)
 
-  obj <- rep(0, ncol(constraints$lhs))
-  obj[variableIndex] <- 1
-  solution <- extremizeVariable(model$constraints, model$epsilonIndex, obj, TRUE)
+  objective <- createObjective(model$constraints$lhs, objectiveIndex)
+  solution <- extremizeVariable(objective, model$constraints, maximize = TRUE)
+  methodResult <- list()
 
-  return(getSolutionOrError(solution))
+  if(validateSolution(solution, allowInconsistency)){
+    methodResult$localUtilityValues <- calculateUtilityValues(model, solution$solution)
+    globalUtilityValues <- utilityValues <- apply(methodResult$localUtilityValues, MARGIN = 1, function(x){ sum(x) })
+    methodResult$ranking <- generateRanking(globalUtilityValues)
+    #method specific functionality
+    methodResult$k <- solution$solution[model$kIndex]
+    methodResult$rho <- solution$solution[model$rhoIndex]
+  }
+  methodResult
 }

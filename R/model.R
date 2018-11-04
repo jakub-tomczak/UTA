@@ -14,11 +14,14 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
   coefficientsMatrix <- calculateCoefficientsMatrix(problem)
 
   #when constructing problem we get into consideration only the number of characteristic points from value functions
-  #we don't consider epsilon
-  #here we add one variable that corresponds to epsilion value
-  numberOfVariables <- problem$numberOfVariables + 1
-  epsilonIndex <- numberOfVariables
-  #and add epsilon column
+  #we don't consider rho and k
+  #here we add one variable that corresponds to rho value
+  numberOfVariables <- problem$numberOfVariables + 2
+  rhoIndex <- numberOfVariables - 1
+  kIndex <- numberOfVariables
+  #add rho column
+  coefficientsMatrix <- cbind(coefficientsMatrix, 0)
+  #add k column
   coefficientsMatrix <- cbind(coefficientsMatrix, 0)
 
   # constraints
@@ -49,7 +52,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
       }
 
       if (problem$strictVF) {
-        lhs[epsilonIndex] <- 1
+        lhs[rhoIndex] <- 1
       }
 
       constraints <- combineConstraints(constraints,
@@ -73,7 +76,8 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
   #remove as many variables as columns
   numberOfVariables <- numberOfVariables - length(leastValuableCharacteristicPoints)
   #update epsilion value
-  epsilonIndex <- numberOfVariables
+  rhoIndex <- numberOfVariables - 1
+  kIndex <- numberOfVariables
   #update constraints - remove least valuable variables, update constraints types
   constraints$lhs <- constraints$lhs[, -leastValuableCharacteristicPoints]
   constraints$variablesTypes <- constraints$variablesTypes[-leastValuableCharacteristicPoints]
@@ -83,7 +87,8 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
   model <- list(
     constraints = constraints,
     criteriaIndices = problem$criteriaIndices,
-    epsilonIndex = epsilonIndex,
+    rhoIndex = rhoIndex,
+    kIndex = kIndex,
     chPoints = problem$characteristicPoints,
     preferencesToModelVariables = coefficientsMatrix,
     criterionPreferenceDirection = problem$criteria,
