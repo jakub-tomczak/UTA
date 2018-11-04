@@ -23,13 +23,14 @@ utag <- function(model, allowInconsistency = FALSE)
   }
   #divide each column by the number of criteria
   partialUtilityValues <- apply(partialUtilityValues, MARGIN = 2, function(x){
-    x / nrCriteria
+    x / 2*nrCriteria
   })
 
   #calculate global utility values = sum values by rows = sum partial utility values for each alternative
   utilityValues <- apply(partialUtilityValues, MARGIN = 1, function(x){
-    sum(x) / 2
+    sum(x)
   })
+  methodResult$localUtilityValues <- partialUtilityValues
   methodResult$ranking <- generateRanking(utilityValues)
   methodResult
 }
