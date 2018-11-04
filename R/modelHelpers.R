@@ -141,14 +141,6 @@ buildPairwiseComparisonConstraint <- function(alternativeIndex, referenceAlterna
   return (list(lhs = lhs, dir = dir, rhs = rhs))
 }
 
-
-addVarialbesToModel <- function(constraints, variables) {
-  for (var in variables)
-    constraints$lhs <- cbind(constraints$lhs, 0)
-  constraints$variablesType <- c(constraints$variablesTypes, variables)
-  return (constraints)
-}
-
 combineConstraints <- function(...) {
   allConst <- list(...)
 
@@ -169,25 +161,6 @@ combineConstraints <- function(...) {
   return (list(lhs = lhs, dir = dir, rhs = rhs, variablesTypes = variablesTypes))
 }
 
-removeConstraints <- function(allConst, constraintsToRemoveIndices) {
-  return (list(lhs = allConst$lhs[-c(constraintsToRemoveIndices), ],
-               dir = allConst$dir[-c(constraintsToRemoveIndices)],
-               rhs = allConst$rhs[-c(constraintsToRemoveIndices)],
-               variablesTypes = allConst$variablesTypes))
-}
-
-
 ua <- function(alternative, preferencesToModelVariables) {
   preferencesToModelVariables[alternative,]
-}
-
-eliminateEpsilon <- function(model) {
-  stopifnot(!is.null(model$epsilonIndex))
-
-  model$constraints$rhs <- model$constraints$rhs - model$constraints$lhs[, model$epsilonIndex] * model$minEpsilon
-  model$constraints$lhs <- model$constraints$lhs[, -c(model$epsilonIndex)]
-  model$constraints$variablesType <- model$constraints$variablesType[-c(model$epsilonIndex)]
-  model$epsilonIndex <- NULL
-
-  return (model)
 }
