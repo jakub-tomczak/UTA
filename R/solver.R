@@ -1,3 +1,24 @@
+#Solver method used when model$methodName is set
+#' @export
+solve <- function(model, allowInconsistency = FALSE)
+{
+  if(is.null(model$methodName)){
+    stop("Method name is not set. Set problem$method or model$methodName.")
+  }
+
+  if(model$methodName == "uta-g")
+  {
+    utag(model, allowInconsistency)
+  } else if(model$methodName == "utamp-1")
+  {
+    utamp1(model, allowInconsistency)
+  } else if(model$methodName == "utamp-2")
+  {
+    utamp2(model, allowInconsistency)
+  } else {
+    stop(paste("Method", model$method, "is not available."))
+  }
+}
 #UTA-G
 #' @export
 utag <- function(model, allowInconsistency = FALSE)

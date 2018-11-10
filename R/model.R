@@ -93,7 +93,8 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
     preferencesToModelVariables = coefficientsMatrix,
     criterionPreferenceDirection = problem$criteria,
     generalVF = problem$generalVF,
-    minEpsilon = minEpsilon
+    minEpsilon = minEpsilon,
+    methodName = problem$methodName
   )
 
   # preference information

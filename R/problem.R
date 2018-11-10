@@ -1,9 +1,9 @@
 #' @export
 buildProblem <- function(performanceTable, criteria, characteristicPoints, strongPreferences = NULL,
-                         weakPreferences = NULL , indifference = NULL)
+                         weakPreferences = NULL , indifference = NULL, method = NULL)
 {
   problem <- validateModel(performanceTable, criteria, strongPreferences,
-                           weakPreferences, characteristicPoints, indifference)
+                           weakPreferences, characteristicPoints, indifference, method)
 
   nrAlternatives <- nrow(problem$performance)
   #contains TRUE on indices corresponding to the criteria that has no characteristicPoints
@@ -25,7 +25,7 @@ buildProblem <- function(performanceTable, criteria, characteristicPoints, stron
 }
 
 validateModel <- function(performanceTable, criteria, strongPreferences,
-                          weakPreferences, characteristicPoints, indifference)
+                          weakPreferences, characteristicPoints, indifference, method)
 {
   assert(is.matrix(performanceTable), "PerformanceTable must be a matrix.")
 
@@ -43,6 +43,12 @@ validateModel <- function(performanceTable, criteria, strongPreferences,
 
   assert(is.matrix(indifference), "Indifference must be a matrix")
 
+  #validate method name
+  if(!is.null(method))
+  {
+    assert(method %in% c('uta-g', 'utamp-1', 'utamp-2'), "Method must be one of the following: 'uta-g', 'utamp-1', 'utamp-2'")
+  }
+
   return (list(
     performanceTable = performanceTable,
     criteria = criteria,
@@ -50,7 +56,8 @@ validateModel <- function(performanceTable, criteria, strongPreferences,
     strongPreferences = strongPreferences,
     weakPreferences = weakPreferences,
     indifference = indifference,
-    strictVF = TRUE
+    strictVF = TRUE,
+    methodName = method
   ))
 }
 
