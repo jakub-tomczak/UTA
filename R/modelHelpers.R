@@ -129,7 +129,7 @@ buildPairwiseComparisonConstraint <- function(alternativeIndex, referenceAlterna
 
   if (preferenceType == "strong") {
     if (!is.null(model$kIndex)) {
-      lhs[model$kIndex] <- -1
+      lhs[model$kIndex] <- 1
     } else {
       assert(!is.null(model$minEpsilon), "Model has not an epsilon and minEpsilon is not set.")
       rhs <- -model$minEpsilon
