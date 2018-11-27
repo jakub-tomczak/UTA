@@ -84,7 +84,7 @@ utamp1 <- function(model, allowInconsistency = FALSE) {
 #UTAMP-2
 #' @export
 utamp2 <- function(model, allowInconsistency = FALSE) {
-  objectiveIndex <- c(model$roIndex, model$kIndex)
+  objectiveIndex <- c(model$rhoIndex, model$kIndex)
 
   objective <- createObjective(model$constraints$lhs, objectiveIndex)
   solution <- extremizeVariable(objective, model$constraints, maximize = TRUE)
