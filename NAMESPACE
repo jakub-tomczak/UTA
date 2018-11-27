@@ -2,6 +2,7 @@
 
 export(buildModel)
 export(buildProblem)
+export(solveProblem)
 export(utag)
 export(utamp1)
 export(utamp2)

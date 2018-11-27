@@ -1,6 +1,6 @@
 #Solver method used when model$methodName is set
 #' @export
-solve <- function(model, allowInconsistency = FALSE)
+solveProblem <- function(model, allowInconsistency = FALSE)
 {
   if(is.null(model$methodName)){
     stop("Method name is not set. Set problem$method or model$methodName.")
