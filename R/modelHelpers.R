@@ -1,4 +1,62 @@
 #### HELPERS
+normalizationConstraint <- function(problem, numberOfVariables, numberOfCriteria){
+  ## sum to 1
+  lhs <- rep(0, numberOfVariables)
+
+  for (j in seq_len(numberOfCriteria)) {
+    if (problem$criteria[j] == 'g')
+      lhs[problem$criteriaIndices[j] + problem$characteristicPoints[j] - 1] <- 1
+    else
+      lhs[problem$criteriaIndices[j]] <- 1
+  }
+
+  list(lhs = lhs, dir = "==", rhs = 1)
+}
+
+monotonicityConstraints <- function(problem, numberOfVariables, numberOfCriteria, rhoIndex){
+  ## monotonicity of vf
+  constraints <- list()
+  for (j in seq_len(numberOfCriteria)) {
+    for (k in seq_len(problem$characteristicPoints[j] - 1)) {
+      lhs <- rep(0, numberOfVariables)
+      rhs <- 0
+
+      if (problem$criteria[j] == "g") {
+        lhs[problem$criteriaIndices[j] + k - 1] <- 1
+        lhs[problem$criteriaIndices[j] + k] <- -1
+      } else {
+        lhs[problem$criteriaIndices[j] + k - 1] <- -1
+        lhs[problem$criteriaIndices[j] + k] <- 1
+      }
+
+      if (problem$strictVF) {
+        lhs[rhoIndex] <- 1
+      }
+
+      constraints <- combineConstraints(constraints,
+                                        list(lhs = lhs, dir = "<=", rhs = rhs))
+    }
+  }
+  constraints
+}
+
+pairwisePreferenceConstraints <- function(problem, model, typeOfPreference){
+  assert(typeOfPreference %in% c("strong", "weak", "indifference"),
+         paste("typeOfPreference", typeOfPreference, "is not valid. Valid types of pairwise preferences are: strong, weak, idifference"))
+  constraints <- list()
+  if (is.matrix(problem$strongPreference)) {
+    for (k in seq_len(nrow(problem$strongPreference))) {
+      alternative <- problem$strongPreference[k, 1]
+      referenceAlternative <- problem$strongPreference[k, 2]
+      constraints <- combineConstraints(constraints,
+                                              buildPairwiseComparisonConstraint(alternative, referenceAlternative,
+                                                                                model, preferenceType = typeOfPreference))
+
+    }
+  }
+  constraints
+}
+
 calculateCoefficientsMatrix <- function(problem){
   numberOfColumns <- sum(problem$characteristicPoints)
   numberOfAlternatives <- nrow(problem$performance)

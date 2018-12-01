@@ -25,44 +25,21 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
   coefficientsMatrix <- cbind(coefficientsMatrix, 0)
 
   # constraints
+  constraints <- list()
   ## sum to 1
-  lhs <- rep(0, numberOfVariables)
-
-  for (j in seq_len(nrCriteria)) {
-    if (problem$criteria[j] == 'g')
-      lhs[problem$criteriaIndices[j] + problem$characteristicPoints[j] - 1] <- 1
-    else
-      lhs[problem$criteriaIndices[j]] <- 1
-  }
-
-  constraints <- list(lhs = lhs, dir = "==", rhs = 1)
+  constraints <- combineConstraints(constraints,
+                                    normalizationConstraint(problem, numberOfVariables, nrCriteria))
 
   ## monotonicity of vf
-  for (j in seq_len(nrCriteria)) {
-    for (k in seq_len(problem$characteristicPoints[j] - 1)) {
-      lhs <- rep(0, numberOfVariables)
-      rhs <- 0
+  constraints <- combineConstraints(constraints,
+                                    monotonicityConstraints(problem, numberOfVariables, nrCriteria, rhoIndex))
 
-      if (problem$criteria[j] == "g") {
-        lhs[problem$criteriaIndices[j] + k - 1] <- 1
-        lhs[problem$criteriaIndices[j] + k] <- -1
-      } else {
-        lhs[problem$criteriaIndices[j] + k - 1] <- -1
-        lhs[problem$criteriaIndices[j] + k] <- 1
-      }
+  #criteria of a continous type
+  constraints$variablesTypes <- rep("C", numberOfVariables)
 
-      if (problem$strictVF) {
-        lhs[rhoIndex] <- 1
-      }
-
-      constraints <- combineConstraints(constraints,
-                                        list(lhs = lhs, dir = "<=", rhs = rhs))
-    }
-  }
-
-  constraints$variablesTypes <- rep("C", numberOfVariables) #continous criteria
-
-  #remove least valuable characteristic points from coefficientMatri and criteria indices
+  # remove least valuable characteristic points from coefficientMatrix and criteria indices
+  # first characteristic point in case of a gain type criterion
+  # last characteristic point in case of a cost type criterion
   leastValuableCharacteristicPoints <- c()
   for(criterion in seq_len(nrCriteria)){
     if(problem$criteria[criterion] == 'g'){
@@ -100,45 +77,14 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
   # preference information
   #prefInfoIndex <- 1
 
-  if (is.matrix(problem$strongPreference)) {
-    for (k in seq_len(nrow(problem$strongPreference))) {
-      alternative <- problem$strongPreference[k, 1]
-      referenceAlternative <- problem$strongPreference[k, 2]
-      model$constraints <- combineConstraints(model$constraints,
-                                              buildPairwiseComparisonConstraint(alternative, referenceAlternative,
-                                                                                model, preferenceType = "strong"))
+  model$constraints <- combineConstraints(model$constraints,
+                                          pairwisePreferenceConstraints(problem, model, "strong"))
 
-      #model$prefInfoToConstraints[[prefInfoIndex]] <- nrow(model$constraints$lhs)
-      #prefInfoIndex <- prefInfoIndex + 1
-    }
-  }
+  model$constraints <- combineConstraints(model$constraints,
+                                          pairwisePreferenceConstraints(problem, model, "weak"))
 
-  if (is.matrix(problem$weakPreference)) {
-    for (k in seq_len(nrow(problem$weakPreference))) {
-      alternative <- problem$weakPreference[k, 1]
-      referenceAlternative <- problem$weakPreference[k, 2]
+  model$constraints <- combineConstraints(model$constraints,
+                                          pairwisePreferenceConstraints(problem, model, "indifference"))
 
-      model$constraints <- combineConstraints(model$constraints,
-                                              buildPairwiseComparisonConstraint(alternative, referenceAlternative,
-                                                                                model, preferenceType = "weak"))
-
-      #model$prefInfoToConstraints[[prefInfoIndex]] <- nrow(model$constraints$lhs)
-      #prefInfoIndex <- prefInfoIndex + 1
-    }
-  }
-
-  if (is.matrix(problem$indifference)) {
-    for (k in seq_len(nrow(problem$indifference))) {
-      alternative <- problem$indifference[k, 1]
-      referenceAlternative <- problem$indifference[k, 2]
-
-      model$constraints <- combineConstraints(model$constraints,
-                                              buildPairwiseComparisonConstraint(alternative, referenceAlternative,
-                                                                                model, preferenceType = "indifference"))
-
-      #model$prefInfoToConstraints[[prefInfoIndex]] <- nrow(model$constraints$lhs)
-      #prefInfoIndex <- prefInfoIndex + 1
-    }
-  }
   return(model)
 }
