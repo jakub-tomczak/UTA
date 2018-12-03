@@ -78,10 +78,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
   #prefInfoIndex <- 1
 
   model$constraints <- combineConstraints(model$constraints,
-                                          pairwisePreferenceConstraints(problem, model, "strong"))
-
-  model$constraints <- combineConstraints(model$constraints,
-                                          pairwisePreferenceConstraints(problem, model, "weak"))
+                                          pairwisePreferenceConstraints(problem, model, "preference"))
 
   model$constraints <- combineConstraints(model$constraints,
                                           pairwisePreferenceConstraints(problem, model, "indifference"))

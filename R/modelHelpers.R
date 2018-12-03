@@ -40,21 +40,25 @@ monotonicityConstraints <- function(problem, numberOfVariables, numberOfCriteria
   constraints
 }
 
-pairwisePreferenceConstraints <- function(problem, model, typeOfPreference){
-  assert(typeOfPreference %in% c("strong", "weak", "indifference"),
-         paste("typeOfPreference", typeOfPreference, "is not valid. Valid types of pairwise preferences are: strong, weak, idifference"))
+pairwisePreferenceConstraints <- function(problem, model, typeOfRelation){
+  assert(typeOfRelation %in% c("preference", "indifference"),
+         paste("typeOfRelation", typeOfRelation, "is not valid. Valid types of pairwise relations are: preference, idifference"))
 
-  preferenceMatrix <- ifelse(typeOfPreference == "strong", problem$strongPreferences,
-                             ifelse(typeOfPreference == "weak", problem$weakPreferences, problem$indifference))
   constraints <- list()
+  relationsMatrix <- NULL
+  if(typeOfRelation == "preference" && !is.null(problem$preferenceRelations)){
+    relationsMatrix <- problem$preferenceRelations
+  } else if(typeOfRelation == "indifference" && !is.null(problem$indifferenceRelations)) {
+    relationsMatrix <-problem$indifferenceRelations
+  }
 
-  if (is.matrix(preferenceMatrix)) {
-    for (k in seq_len(nrow(preferenceMatrix))) {
-      alternative <- preferenceMatrix[k, 1]
-      referenceAlternative <- preferenceMatrix[k, 2]
+  if (is.matrix(relationsMatrix)) {
+    for (k in seq_len(nrow(relationsMatrix))) {
+      alternative <- relationsMatrix[k, 1]
+      referenceAlternative <- relationsMatrix[k, 2]
       constraints <- combineConstraints(constraints,
                                               buildPairwiseComparisonConstraint(alternative, referenceAlternative,
-                                                                                model, preferenceType = typeOfPreference))
+                                                                                model, relationsType = typeOfRelation))
 
     }
   }
@@ -79,7 +83,7 @@ calculateCoefficientsMatrix <- function(problem){
 
   for(criterion in seq_len(numberOfCriteria)){
     characteristicPoints <- characteristicPointsValues[[criterion]]
-    interval <- characteristicPoints[2]-characteristicPoints[1]
+    interval <- characteristicPoints[2] - characteristicPoints[1]
     for(alternative in seq_len(numberOfAlternatives)){
       value <- problem$performance[alternative, criterion]
       for(threshold in thresholds){
@@ -187,21 +191,22 @@ buildLHSForPairwiseComparison <- function(alternativeIndex, referenceAlternative
   model$preferencesToModelVariables[referenceAlternativeIndex,] - model$preferencesToModelVariables[alternativeIndex, ]
 }
 
-buildPairwiseComparisonConstraint <- function(alternativeIndex, referenceAlternativeIndex, model, preferenceType) {
-  stopifnot(preferenceType %in% c("weak", "strong", "indifference"))
+buildPairwiseComparisonConstraint <- function(alternativeIndex, referenceAlternativeIndex, model, relationsType) {
+  assert(relationsType %in% c("preference", "indifference"),
+         paste("relationsType", relationsType, "is not valid. Valid types of pairwise relations are: preference, idifference"))
 
   lhs <- buildLHSForPairwiseComparison(alternativeIndex, referenceAlternativeIndex, model)
   dir <- "<="
   rhs <- 0
 
-  if (preferenceType == "strong") {
+  if (relationsType == "preference") {
     if (!is.null(model$kIndex)) {
       lhs[model$kIndex] <- 1
     } else {
       assert(!is.null(model$minEpsilon), "Model has not an epsilon and minEpsilon is not set.")
       rhs <- -model$minEpsilon
     }
-  } else if (preferenceType == "indifference") {
+  } else if (relationsType == "indifference") {
     dir <- "=="
   }
 
