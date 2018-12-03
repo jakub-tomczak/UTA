@@ -178,10 +178,15 @@ createCriteriaIndices <- function(problem, substractZeroCoefficients){
   criteriaIndices
 }
 
+buildLHSForPairwiseComparison <- function(alternativeIndex, referenceAlternativeIndex, model){
+  # U(referenceAlternative) - U(alternative)
+  model$preferencesToModelVariables[referenceAlternativeIndex,] - model$preferencesToModelVariables[alternativeIndex, ]
+}
+
 buildPairwiseComparisonConstraint <- function(alternativeIndex, referenceAlternativeIndex, model, preferenceType) {
   stopifnot(preferenceType %in% c("weak", "strong", "indifference"))
 
-  lhs <- model$preferencesToModelVariables[referenceAlternativeIndex,] - model$preferencesToModelVariables[alternativeIndex, ]
+  lhs <- buildLHSForPairwiseComparison(alternativeIndex, referenceAlternativeIndex, model)
   dir <- "<="
   rhs <- 0
 
