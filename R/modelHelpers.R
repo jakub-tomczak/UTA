@@ -43,11 +43,15 @@ monotonicityConstraints <- function(problem, numberOfVariables, numberOfCriteria
 pairwisePreferenceConstraints <- function(problem, model, typeOfPreference){
   assert(typeOfPreference %in% c("strong", "weak", "indifference"),
          paste("typeOfPreference", typeOfPreference, "is not valid. Valid types of pairwise preferences are: strong, weak, idifference"))
+
+  preferenceMatrix <- ifelse(typeOfPreference == "strong", problem$strongPreferences,
+                             ifelse(typeOfPreference == "weak", problem$weakPreferences, problem$indifference))
   constraints <- list()
-  if (is.matrix(problem$strongPreference)) {
-    for (k in seq_len(nrow(problem$strongPreference))) {
-      alternative <- problem$strongPreference[k, 1]
-      referenceAlternative <- problem$strongPreference[k, 2]
+
+  if (is.matrix(preferenceMatrix)) {
+    for (k in seq_len(nrow(preferenceMatrix))) {
+      alternative <- preferenceMatrix[k, 1]
+      referenceAlternative <- preferenceMatrix[k, 2]
       constraints <- combineConstraints(constraints,
                                               buildPairwiseComparisonConstraint(alternative, referenceAlternative,
                                                                                 model, preferenceType = typeOfPreference))
