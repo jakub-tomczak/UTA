@@ -40,16 +40,16 @@ utag <- function(model, allowInconsistency = FALSE)
     objective <- createObjective(model$constraints$lhs, extremizedCriterionIndex)
     solutionMin <- extremizeVariable(objective, model$constraints, maximize=FALSE)
     solutionMax <- extremizeVariable(objective, model$constraints, maximize=TRUE)
-    #add appropriate from min and max solution
-    partialUtilityValues[, j] <- partialUtilityValues[, j] + calculateUtilityValuesOnCriterion(model, solutionMin$solution, j)
-    partialUtilityValues[, j] <- partialUtilityValues[, j] + calculateUtilityValuesOnCriterion(model, solutionMax$solution, j)
+    # add appropriate from min and max solution
+    # to all criteria
+    partialUtilityValues <- partialUtilityValues + calculateUtilityValues(model, solutionMin$solution) + calculateUtilityValues(model, solutionMax$solution)
   }
-  #divide each column by the number of criteria
+  # divide each column by the number of criteria
   partialUtilityValues <- apply(partialUtilityValues, MARGIN = 2, function(x){
-    x / 2*nrCriteria
+    x/(2*nrCriteria)
   })
 
-  #calculate global utility values = sum values by rows = sum partial utility values for each alternative
+  # calculate global utility values = sum values by rows = sum partial utility values for each alternative
   utilityValues <- apply(partialUtilityValues, MARGIN = 1, function(x){
     sum(x)
   })
