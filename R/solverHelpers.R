@@ -45,7 +45,7 @@ calculateUtilityValuesOnCriterion <- function(model, value, criterionNumber){
   {
     #from and to are used to index a criterion's marginal values coefficients on a preferences matrix
     from <- model$criteriaIndices[criterionNumber]
-    #minus (1 - beacuse of the fact we ommit the least value characterisitc point, 1 - last index is included)
+    #minus (1 -> beacuse of the fact that we ommit the least valuable characterisitc point + 1 -> last index is included)
     to <- from + model$chPoints[criterionNumber]-2
 
     if(length(value) == 1){
