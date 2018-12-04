@@ -1,9 +1,9 @@
 #' @export
 buildProblem <- function(performanceTable, criteria, characteristicPoints,
-                         preferenceRelations = NULL, indifferenceRelations = NULL, method = NULL)
+                         preferenceRelations = NULL, indifferenceRelations = NULL)
 {
   problem <- validateModel(performanceTable, criteria, characteristicPoints,
-                           preferenceRelations, indifferenceRelations, method)
+                           preferenceRelations, indifferenceRelations)
 
   nrAlternatives <- nrow(problem$performance)
   #contains TRUE on indices corresponding to the criteria that has no characteristicPoints
@@ -39,20 +39,13 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
 
   # assert(is.matrix(indifferenceRelations), "Indifference must be a matrix")
 
-  #validate method name
-  if(!is.null(method))
-  {
-    assert(method %in% c('uta-g', 'utamp-1', 'utamp-2'), "Method must be one of the following: 'uta-g', 'utamp-1', 'utamp-2'")
-  }
-
   return (list(
     performanceTable = performanceTable,
     criteria = criteria,
     characteristicPoints = characteristicPoints,
     preferenceRelations = preferenceRelations,
     indifferenceRelations = indifferenceRelations,
-    strictVF = TRUE,
-    methodName = method
+    strictVF = TRUE
   ))
 }
 

@@ -1,11 +1,9 @@
 #### BUILDING MODEL
 
 #' @export
-buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # includeEpsilonAsVariable,
-  if(! (method %in% c("uta", "utamp-1", "utamp-2")))
-  {
-    stop("Method must be on of the following: `uta`, `utamp-1`, `utamp-2`")
-  }
+buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4) { # includeEpsilonAsVariable,
+  availableMethods <- getAvailableMethods()
+  assert(method %in% availableMethods, paste("Method must be one of the following:", unlist(availableMethods)))
   nrAlternatives <- nrow(problem$performance)
   nrCriteria <- ncol(problem$performance)
 
@@ -59,7 +57,7 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
     criterionPreferenceDirection = problem$criteria,
     generalVF = problem$generalVF,
     minEpsilon = minEpsilon,
-    methodName = problem$methodName
+    methodName = method
   )
 
   # remove least valuable characteristic points

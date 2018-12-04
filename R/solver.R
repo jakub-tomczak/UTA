@@ -6,19 +6,21 @@ solveProblem <- function(model, allowInconsistency = FALSE)
     stop("Method name is not set. Set problem$method or model$methodName.")
   }
 
-  if(model$methodName == "uta-g")
+  availableMethods <- getAvailableMethods()
+  if(model$methodName == availableMethods$utag)
   {
     utag(model, allowInconsistency)
-  } else if(model$methodName == "utamp-1")
+  } else if(model$methodName == availableMethods$utamp1)
   {
     utamp1(model, allowInconsistency)
-  } else if(model$methodName == "utamp-2")
+  } else if(model$methodName == availableMethods$utamp2)
   {
     utamp2(model, allowInconsistency)
   } else {
-    stop(paste("Method", model$method, "is not available."))
+    stop(paste("Method", model$method, "is not available. Available methods", unlist(availableMethods)))
   }
 }
+
 #UTA-G
 #' @export
 utag <- function(model, allowInconsistency = FALSE)
