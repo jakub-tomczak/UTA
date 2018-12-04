@@ -296,6 +296,7 @@ removeColumnsFromModelConstraints <- function(model, columnsIndices){
     criterionPreferenceDirection = model$criterionPreferenceDirection,
     generalVF = model$generalVF,
     minEpsilon = model$minEpsilon,
-    methodName = model$methodName
+    methodName = model$methodName,
+    performances = model$performance
   )
 }

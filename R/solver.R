@@ -29,6 +29,7 @@ utag <- function(model, allowInconsistency = FALSE)
   nrAlternative <- nrow(model$preferencesToModelVariables)
   partialUtilityValues <- matrix(0, nrow = nrAlternative, ncol = nrCriteria)
   methodResult <- list()
+  meanVFMarginalValues <- rep(0, ncol(model$constraints$lhs))
 
   for (j in seq_len(nrCriteria))
   {
@@ -40,6 +41,7 @@ utag <- function(model, allowInconsistency = FALSE)
     objective <- createObjective(model$constraints$lhs, extremizedCriterionIndex)
     solutionMin <- extremizeVariable(objective, model$constraints, maximize=FALSE)
     solutionMax <- extremizeVariable(objective, model$constraints, maximize=TRUE)
+    meanVFMarginalValues <- meanVFMarginalValues + solutionMin$solution + solutionMax$solution
     # add appropriate from min and max solution
     # to all criteria
     partialUtilityValues <- partialUtilityValues + calculateUtilityValues(model, solutionMin$solution) + calculateUtilityValues(model, solutionMax$solution)
@@ -49,27 +51,33 @@ utag <- function(model, allowInconsistency = FALSE)
     x/(2*nrCriteria)
   })
 
+  VFMarginalValues <- sapply(meanVFMarginalValues, function(x){
+    x/(2*nrCriteria)
+  })
   # calculate global utility values = sum values by rows = sum partial utility values for each alternative
   utilityValues <- apply(partialUtilityValues, MARGIN = 1, function(x){
     sum(x)
   })
   methodResult$localUtilityValues <- partialUtilityValues
   methodResult$ranking <- generateRanking(utilityValues)
+  methodResult$valueFunctionsMarginalValues <- getValueFunctionsMarginalValues(model, VFMarginalValues)
   methodResult
 }
 
 #UTAMP-1
 #' @export
 utamp1 <- function(model, allowInconsistency = FALSE) {
-  objectiveIndex <- c(model$kIndex)
-  if (is.null(objectiveIndex)) {
-    stop("Use function buildModel with includeEpsilonAsVariable = TRUE.")
-  }
+  assert(!is.null(model$kIndex),
+         "k must be a variable in the model. Try building model again with a command `buildModel(problem, 'utamp-1')`.")
 
   objectiveIndex <- c(model$kIndex)
   objective <- createObjective(model$constraints$lhs, objectiveIndex)
   solution <- extremizeVariable(objective, model$constraints, maximize=TRUE)
+  assert(solution$status == 0, "Model is not feasible")
+
   methodResult <- list()
+  methodResult$solution <- solution
+  methodResult$valueFunctions <- list()
 
   if(validateSolution(solution, allowInconsistency)){
     methodResult$localUtilityValues <- calculateUtilityValues(model, solution$solution)
@@ -78,7 +86,7 @@ utamp1 <- function(model, allowInconsistency = FALSE) {
     #method specific functionality
 
     methodResult$epsilon <- solution$solution[objectiveIndex]
-
+    methodResult$valueFunctionsMarginalValues <- getValueFunctionsMarginalValues(model, solution$solution)
   }
   methodResult
 }
@@ -86,8 +94,10 @@ utamp1 <- function(model, allowInconsistency = FALSE) {
 #UTAMP-2
 #' @export
 utamp2 <- function(model, allowInconsistency = FALSE) {
-  objectiveIndex <- c(model$rhoIndex, model$kIndex)
+  assert(!is.null(model$kIndex) && !is.null(model$rhoIndex),
+         "k or rho must be a variable in the model. Try building model again with a command `buildModel(problem, 'utamp-2')`.")
 
+  objectiveIndex <- c(model$rhoIndex, model$kIndex)
   objective <- createObjective(model$constraints$lhs, objectiveIndex)
   solution <- extremizeVariable(objective, model$constraints, maximize = TRUE)
   methodResult <- list()
@@ -99,6 +109,7 @@ utamp2 <- function(model, allowInconsistency = FALSE) {
     #method specific functionality
     methodResult$k <- solution$solution[model$kIndex]
     methodResult$rho <- solution$solution[model$rhoIndex]
+    methodResult$valueFunctionsMarginalValues <- getValueFunctionsMarginalValues(model, solution$solution)
   }
   methodResult
 }
