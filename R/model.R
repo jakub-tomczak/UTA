@@ -57,7 +57,8 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4) { # incl
     criterionPreferenceDirection = problem$criteria,
     generalVF = problem$generalVF,
     minEpsilon = minEpsilon,
-    methodName = method
+    methodName = method,
+    performances = problem$performanceTable
   )
 
   # remove least valuable characteristic points
