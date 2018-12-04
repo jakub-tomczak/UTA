@@ -19,10 +19,6 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
   numberOfVariables <- problem$numberOfVariables + 2
   rhoIndex <- numberOfVariables - 1
   kIndex <- numberOfVariables
-  #add rho column
-  coefficientsMatrix <- cbind(coefficientsMatrix, 0)
-  #add k column
-  coefficientsMatrix <- cbind(coefficientsMatrix, 0)
 
   # constraints
   constraints <- list()
@@ -48,17 +44,9 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
       leastValuableCharacteristicPoints <- c(leastValuableCharacteristicPoints, problem$criteriaIndices[criterion] + problem$characteristicPoints[criterion] - 1)
     }
   }
-  problem$criteriaIndices <- createCriteriaIndices(problem, substractZeroCoefficients=TRUE)
-  coefficientsMatrix <- coefficientsMatrix[,-leastValuableCharacteristicPoints]
-  #remove as many variables as columns
-  numberOfVariables <- numberOfVariables - length(leastValuableCharacteristicPoints)
-  #update epsilion value
-  rhoIndex <- numberOfVariables - 1
-  kIndex <- numberOfVariables
-  #update constraints - remove least valuable variables, update constraints types
-  constraints$lhs <- constraints$lhs[, -leastValuableCharacteristicPoints]
-  constraints$variablesTypes <- constraints$variablesTypes[-leastValuableCharacteristicPoints]
 
+  # update criteria indices, before removing the leastValuableCharacteristicPoints
+  problem$criteriaIndices <- getCriteriaIndices(problem, substractZeroCoefficients=FALSE)
 
   ## building model
   model <- list(
@@ -73,6 +61,11 @@ buildModel <- function(problem, minEpsilon = 1e-4, method="utamp-1") { # include
     minEpsilon = minEpsilon,
     methodName = problem$methodName
   )
+
+  # remove least valuable characteristic points
+  model <- removeColumnsFromModelConstraints(model, leastValuableCharacteristicPoints)
+  problem$criteriaIndices <- getCriteriaIndices(problem, substractZeroCoefficients = TRUE)
+  model$criteriaIndices <- problem$criteriaIndices
 
   # preference information
   #prefInfoIndex <- 1

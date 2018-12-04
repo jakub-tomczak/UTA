@@ -52,8 +52,8 @@ calculateUtilityValuesOnCriterion <- function(model, value, criterionNumber){
       #multiplying by number
       sum(model$preferencesToModelVariables[alternative, from:to] * value)
     } else{
-      assert(ncol(model$preferencesToModelVariables) == length(value),
-             "If value is a vector it must represent the same number of coefficients as in the preferencesToModelVariables.")
+      # assert(ncol(model$preferencesToModelVariables) == length(value),
+      #       "If value is a vector it must contain the same number of coefficients as the preferencesToModelVariables.")
       #multiplying by vector
       model$preferencesToModelVariables[alternative, from:to] %*% value[from:to]
     }

@@ -176,7 +176,7 @@ getInterpolationCoefficients <- function(value, minimalValue, intervalLength){
 #substractZeroCoefficients:
 # TRUE == remove one column that responds for the characteristic point that has the worst value == 0
 # FALSE == don't remve this column
-createCriteriaIndices <- function(problem, substractZeroCoefficients){
+getCriteriaIndices <- function(problem, substractZeroCoefficients){
   criteriaIndices <- c(1)
   zeroCoefficientsToSubstract <- if(substractZeroCoefficients) 1 else 0
   for(i in seq_len(ncol(problem$performance)-1))
@@ -195,7 +195,18 @@ buildPairwiseComparisonConstraint <- function(alternativeIndex, referenceAlterna
   assert(relationsType %in% c("preference", "indifference"),
          paste("relationsType", relationsType, "is not valid. Valid types of pairwise relations are: preference, idifference"))
 
-  lhs <- buildLHSForPairwiseComparison(alternativeIndex, referenceAlternativeIndex, model)
+  marginalValuesVariables <- c()
+  if(length(alternativeIndex) == 1){
+    marginalValuesVariables <- buildLHSForPairwiseComparison(alternativeIndex, referenceAlternativeIndex, model)
+  } else {
+    marginalValuesVariables <- buildLHSForPairwiseComparison(alternativeIndex[0], referenceAlternativeIndex[0], model) -
+      buildLHSForPairwiseComparison(alternativeIndex[1], referenceAlternativeIndex[1], model)
+  }
+  # lhs holds a vector of a length equal to the number of marginal values
+  # lhs should be a vector of the length of a number of columns in constraints matrix
+  lhs <- rep(0, ncol(model$constraints$lhs))
+  lhs[0:length(marginalValuesVariables)] <- marginalValuesVariables
+
   dir <- "<="
   rhs <- 0
 
@@ -235,4 +246,56 @@ combineConstraints <- function(...) {
 
 ua <- function(alternative, preferencesToModelVariables) {
   preferencesToModelVariables[alternative,]
+}
+
+removeColumnsFromModelConstraints <- function(model, columnsIndices){
+  assert(ncol(model$constraints$lhs) >= max(columnsIndices),
+         paste("Cannot remove a column with index", max(columnsIndices), ", LHS contains only", ncol(model$constraints$lhs)))
+  if(length(columnsIndices) < 1){
+    return(model)
+  }
+  sortedColumnsIndices <- sort(columnsIndices)
+  lhs <- model$constraints$lhs[, -sortedColumnsIndices]
+  variablesTypes <- model$constraints$variablesTypes[-sortedColumnsIndices]
+
+  # remove columns from the model$preferencesToModel if appropriate columns were indicated
+  preferencesIndicesToRemove <- sortedColumnsIndices[sortedColumnsIndices < ncol(model$preferencesToModelVariables)]
+  preferencesToModelVariables <- model$preferencesToModelVariables
+  if(length(preferencesIndicesToRemove) > 0){
+    preferencesToModelVariables <- model$preferencesToModelVariables[, -preferencesIndicesToRemove]
+  }
+
+  # if the columnIndex is equal to the of the additional variables then remove it
+  rhoIndex <- if(model$rhoIndex %in% sortedColumnsIndices) NULL else model$rhoIndex
+  kIndex <- if(model$kIndex %in% sortedColumnsIndices) NULL else model$kIndex
+
+  # otherwise move its position in the constraints matrix to the left (decrease its index)
+  if(!is.null(rhoIndex)){
+    positionToMove <- length(sortedColumnsIndices[sortedColumnsIndices < rhoIndex])
+    rhoIndex <- rhoIndex - positionToMove
+  }
+
+  if(!is.null(kIndex)){
+    positionToMove <- length(sortedColumnsIndices[sortedColumnsIndices < kIndex])
+    kIndex <- kIndex - positionToMove
+  }
+
+  constraints <- list(lhs = lhs,
+                     rhs = model$constraints$rhs,
+                     dir = model$constraints$dir,
+                     variablesTypes = variablesTypes)
+
+  # return a new model
+  list(
+    constraints = constraints,
+    criteriaIndices = model$criteriaIndices,
+    rhoIndex = rhoIndex,
+    kIndex = kIndex,
+    chPoints = model$chPoints,
+    preferencesToModelVariables = preferencesToModelVariables,
+    criterionPreferenceDirection = model$criterionPreferenceDirection,
+    generalVF = model$generalVF,
+    minEpsilon = model$minEpsilon,
+    methodName = model$methodName
+  )
 }
