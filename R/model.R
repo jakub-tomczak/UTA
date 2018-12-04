@@ -75,5 +75,22 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4) { # incl
   model$constraints <- combineConstraints(model$constraints,
                                           pairwisePreferenceConstraints(problem, model, "indifference"))
 
+  # method specific actions
+  if(method == availableMethods$utag){
+    # exchange k variable with a small positive constant
+    # get indices of all constraints that use k
+    constraintsWithKIndex <- which(model$constraints$lhs[, model$kIndex] %in% 1)
+    model <- removeColumnsFromModelConstraints(model, model$kIndex)
+    if(length(constraintsWithKIndex) > 0){
+      model$constraints$rhs[constraintsWithKIndex] = minK
+    }
+
+  } else if(method == availableMethods$roruta){
+    model$constraints <- combineConstraints(model$constraints,
+                                            intensitiesConstraints(problem, model, "preference"))
+    model$constraints <- combineConstraints(model$constraints,
+                                            intensitiesConstraints(problem, model, "indifference"))
+  }
+
   return(model)
 }
