@@ -17,7 +17,7 @@ solveProblem <- function(model, allowInconsistency = FALSE)
   {
     utamp2(model, allowInconsistency)
   } else {
-    stop(paste("Method", model$method, "is not available. Available methods", unlist(availableMethods)))
+    stop(paste(availableMethods, " "))
   }
 }
 
