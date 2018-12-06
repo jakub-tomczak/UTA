@@ -29,7 +29,7 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4) { # incl
                                     monotonicityConstraints(problem, numberOfVariables, nrCriteria, rhoIndex))
 
   #criteria of a continous type
-  constraints$variablesTypes <- rep("C", numberOfVariables)
+  constraints$variablesTypes <- rep("C", ncol(constraints$lhs))
 
   # remove least valuable characteristic points from coefficientMatrix and criteria indices
   # first characteristic point in case of a gain type criterion
