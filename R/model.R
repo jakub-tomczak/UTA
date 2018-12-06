@@ -3,7 +3,7 @@
 #' @export
 buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4) { # includeEpsilonAsVariable,
   availableMethods <- getAvailableMethods()
-  assert(method %in% availableMethods, paste("Method must be one of the following:", unlist(availableMethods)))
+  assert(method %in% availableMethods, paste(availableMethods, " "))
   nrAlternatives <- nrow(problem$performance)
   nrCriteria <- ncol(problem$performance)
 
