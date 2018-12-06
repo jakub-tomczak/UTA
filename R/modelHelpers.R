@@ -300,3 +300,47 @@ removeColumnsFromModelConstraints <- function(model, columnsIndices){
     performances = model$performance
   )
 }
+
+splitVariable <- function(model, variableIndex){
+  colsInConstraints <- ncol(model$constraints$lhs)
+
+  # find all indices of constraints where variableIndex is enabled <==> 1
+  constraintsRowsWithVariable <- which(model$constraints$lhs[, variableIndex] %in% 1)
+
+  if(length(constraintsRowsWithVariable) > 0) {
+    # there are some constraints with the variableIndex enabled
+    constraints <- model$constraints
+
+    # add as many columns as the number of indices found
+    constraints$lhs <- cbind(constraints$lhs, matrix(0, nrow = nrow(constraints$lhs), ncol = length(constraintsRowsWithVariable)))
+
+    # for all constraints where the variableIndex is enabled
+    columnsIterator <- colsInConstraints + 1
+    for(i in constraintsRowsWithVariable){
+      # disable variableIndex index in constraint
+      constraints$lhs[i, variableIndex] <- 0
+
+      # add partial variable constraint
+      constraints$lhs[i, columnsIterator] <- 1
+
+      # add constraint row: partialVariable >= variable <=> variable - partialVariable <= 0
+      lhs = rep(0, ncol(constraints$lhs))
+
+      # variable
+      lhs[variableIndex] <- 1
+      # -partialVariable
+      lhs[columnsIterator] <- -1
+
+      constraint <- list(lhs = lhs, dir = "<=", rhs = 0)
+      # add new constraint: partialVariable >= variable
+      constraints <- combineConstraints(constraints, constraint)
+
+      columnsIterator <- columnsIterator + 1
+    }
+
+    # all variables are of a continous type
+    constraints$variablesTypes <- rep("C", ncol(constraints$lhs))
+  }
+  # return new constraints
+  constraints
+}
