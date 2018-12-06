@@ -90,6 +90,12 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4) { # incl
                                             intensitiesConstraints(problem, model, "preference"))
     model$constraints <- combineConstraints(model$constraints,
                                             intensitiesConstraints(problem, model, "indifference"))
+  } else if(method == availableMethods$utamp1){
+    model$constraints <- splitVariable(model, model$kIndex)
+  } else if(method == availableMethods$utamp2) {
+    # split rho into rho_jk
+    model$constraints <- splitVariable(model, model$rhoIndex)
+    model$constraints <- splitVariable(model, model$kIndex)
   }
 
   return(model)
