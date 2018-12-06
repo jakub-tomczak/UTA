@@ -97,6 +97,7 @@ utamp2 <- function(model, allowInconsistency = FALSE) {
   assert(!is.null(model$kIndex) && !is.null(model$rhoIndex),
          "k or rho must be a variable in the model. Try building model again with a command `buildModel(problem, 'utamp-2')`.")
 
+  objectiveIndex <- c(model$rhoIndex, model$kIndex)
   objective <- createObjective(model$constraints$lhs, objectiveIndex)
   solution <- extremizeVariable(objective, model$constraints, maximize = TRUE)
   methodResult <- list()
