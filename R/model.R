@@ -62,9 +62,10 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4) { # incl
   )
 
   # remove least valuable characteristic points
-  model <- removeColumnsFromModelConstraints(model, leastValuableCharacteristicPoints)
-  problem$criteriaIndices <- getCriteriaIndices(problem, substractZeroCoefficients = TRUE)
-  model$criteriaIndices <- problem$criteriaIndices
+  # model <- removeColumnsFromModelConstraints(model, leastValuableCharacteristicPoints)
+  # update criteria indices
+  # problem$criteriaIndices <- getCriteriaIndices(problem, substractZeroCoefficients = TRUE)
+  # model$criteriaIndices <- problem$criteriaIndices
 
   # preference information
   #prefInfoIndex <- 1
