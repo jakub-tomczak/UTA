@@ -1,9 +1,12 @@
+# TODO
+# Check validation messages.
 #' @export
 buildProblem <- function(performanceTable, criteria, characteristicPoints,
-                         preferenceRelations = NULL, indifferenceRelations = NULL)
+                         preferenceRelations = NULL, indifferenceRelations = NULL,
+                         preferenceIntensitiesRelations = NULL, indifferenceIntensitiesRelations = NULL)
 {
   problem <- validateModel(performanceTable, criteria, characteristicPoints,
-                           preferenceRelations, indifferenceRelations)
+                           preferenceRelations, indifferenceRelations, preferenceIntensitiesRelations, indifferenceIntensitiesRelations)
 
   nrAlternatives <- nrow(problem$performance)
   #contains TRUE on indices corresponding to the criteria that has no characteristicPoints
@@ -24,8 +27,12 @@ buildProblem <- function(performanceTable, criteria, characteristicPoints,
   return(problem)
 }
 
+# TODO
+# Remove method parameter.
 validateModel <- function(performanceTable, criteria, characteristicPoints,
-                          preferenceRelations, indifferenceRelations, method = NULL)
+                          preferenceRelations, indifferenceRelations,
+                          preferenceIntensitiesRelations, indifferenceIntensitiesRelations,
+                          method = NULL)
 {
   assert(is.matrix(performanceTable), "PerformanceTable must be a matrix.")
 
@@ -34,8 +41,10 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
   assert(ncol(criteria) == numberOfCriterions, "Number of criteria given in performanceTable matrix is not equal to the number of criteria names.")
   assert(all(criteria %in% c("c", "g")), "Criteria must be of type `c` or `g`.")
 
-  validateRelations(preferenceRelations, numberOfPreferences)
-  validateRelations(indifferenceRelations, numberOfPreferences)
+  validateRelations(preferenceRelations, numberOfPreferences, relationName = "preference")
+  validateRelations(indifferenceRelations, numberOfPreferences, relationName = "indifference")
+  validateRelations(preferenceIntensitiesRelations, numberOfPreferences, arity = 4, relationName = "preferenceIntensities")
+  validateRelations(indifferenceIntensitiesRelations, numberOfPreferences, arity = 4, relationName = "indifferenceIntensities")
 
   # assert(is.matrix(indifferenceRelations), "Indifference must be a matrix")
 
@@ -45,20 +54,22 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
     characteristicPoints = characteristicPoints,
     preferenceRelations = preferenceRelations,
     indifferenceRelations = indifferenceRelations,
+    preferenceIntensities = preferenceIntensitiesRelations,
+    indifferenceIntensities = indifferenceIntensitiesRelations,
     strictVF = TRUE
   ))
 }
 
-validateRelations <- function(relation, numberOfPreferences)
+validateRelations <- function(relation, numberOfPreferences, arity = 2, relationName = "unknown")
 {
   if(!is.matrix(relation) || is.null(relation))
   {
-    return (matrix(nrow=0, ncol=2))
+    return (matrix(nrow=0, ncol=arity))
   }
 
-  assert(ncol(relation) == 2, "Preference relation must be given in pairs.")
+  assert(ncol(relation) == arity, paste("Relation", relationName, "has arity:", arity, ". Number of arguments typed:", ncol(relation), "."))
 
   #check weather minimum and maximum index are in performanceTable indices bounds
   assert(min(relation) >= 1, "There is no preference with index lower than 1")
-  assert(max(relation) <= numberOfPreferences, paste("There is no preference with index higher than", numberOfPreferences))
+  assert(max(relation) <= numberOfPreferences, paste("There is no preference with index higher than:", numberOfPreferences, ". Typed a preference with index:", max(relation)))
 }

@@ -40,6 +40,32 @@ monotonicityConstraints <- function(problem, numberOfVariables, numberOfCriteria
   constraints
 }
 
+intensitiesConstraints <- function(problem, model, typeOfRelation){
+  assert(typeOfRelation %in% c("preference", "indifference"),
+         paste("typeOfRelation", typeOfRelation, "is not valid. Valid types of intensities are: preference, idifference"))
+  availableMethods <- getAvailableMethods()
+  assert(model$methodName == availableMethods$roruta, paste("So far, only the `", availableMethods$roruta ,"` method supports intensities relation."))
+  constraints <- list()
+  relationsMatrix <- NULL
+  if(typeOfRelation == "preference" && !is.null(problem$preferenceIntensities)){
+    relationsMatrix <- problem$preferenceIntensities
+  } else if(typeOfRelation == "indifference" && !is.null(problem$indifferenceIntensities)) {
+    relationsMatrix <-problem$indifferenceIntensities
+  }
+
+  if (is.matrix(relationsMatrix)) {
+    for (k in seq_len(nrow(relationsMatrix))) {
+      alternatives <- relationsMatrix[k, c(1,2)]
+      referenceAlternatives <- relationsMatrix[k, c(3,4)]
+      constraints <- combineConstraints(constraints,
+                                        buildPairwiseComparisonConstraint(alternatives, referenceAlternatives,
+                                                                          model, relationsType = typeOfRelation))
+
+    }
+  }
+  constraints
+}
+
 pairwisePreferenceConstraints <- function(problem, model, typeOfRelation){
   assert(typeOfRelation %in% c("preference", "indifference"),
          paste("typeOfRelation", typeOfRelation, "is not valid. Valid types of pairwise relations are: preference, idifference"))
@@ -199,8 +225,9 @@ buildPairwiseComparisonConstraint <- function(alternativeIndex, referenceAlterna
   if(length(alternativeIndex) == 1){
     marginalValuesVariables <- buildLHSForPairwiseComparison(alternativeIndex, referenceAlternativeIndex, model)
   } else {
-    marginalValuesVariables <- buildLHSForPairwiseComparison(alternativeIndex[0], referenceAlternativeIndex[0], model) -
-      buildLHSForPairwiseComparison(alternativeIndex[1], referenceAlternativeIndex[1], model)
+    # -a + b + (-d + c)
+    marginalValuesVariables <- buildLHSForPairwiseComparison(alternativeIndex[1], alternativeIndex[2], model) +
+      buildLHSForPairwiseComparison(referenceAlternativeIndex[1], referenceAlternativeIndex[2], model)
   }
   # lhs holds a vector of a length equal to the number of marginal values
   # lhs should be a vector of the length of a number of columns in constraints matrix
