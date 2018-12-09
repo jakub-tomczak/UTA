@@ -85,12 +85,17 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4) { # incl
     if(length(constraintsWithKIndex) > 0){
       model$constraints$rhs[constraintsWithKIndex] = minK
     }
-
   } else if(method == availableMethods$roruta){
     model$constraints <- combineConstraints(model$constraints,
                                             intensitiesConstraints(problem, model, "preference"))
     model$constraints <- combineConstraints(model$constraints,
                                             intensitiesConstraints(problem, model, "indifference"))
+    # remove rho
+    model <- removeColumnsFromModelConstraints(model, model$rhoIndex)
+
+    # rename k to epsilon
+    model$epsilonIndex <- model$kIndex
+    model$kIndex <- NULL
   } else if(method == availableMethods$utamp1){
     model$constraints <- splitVariable(model, model$kIndex)
   } else if(method == availableMethods$utamp2) {

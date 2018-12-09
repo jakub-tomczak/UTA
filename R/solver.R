@@ -16,6 +16,8 @@ solveProblem <- function(model, allowInconsistency = FALSE)
   } else if(model$methodName == availableMethods$utamp2)
   {
     utamp2(model, allowInconsistency)
+  } else if(model$methodName == availableMethods$roruta){
+    stop("roruta has not been defined yet.")
   } else {
     stop(paste(availableMethods, " "))
   }
