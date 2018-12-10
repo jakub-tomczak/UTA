@@ -34,12 +34,12 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
                           preferenceIntensitiesRelations, indifferenceIntensitiesRelations,
                           method = NULL)
 {
-  assert(is.matrix(performanceTable), "PerformanceTable must be a matrix.")
+  validate(is.matrix(performanceTable), "performanceTable", "performanceTable must be a matrix.")
 
   numberOfPreferences <- nrow(performanceTable)
   numberOfCriterions <- ncol(performanceTable)
-  assert(ncol(criteria) == numberOfCriterions, "Number of criteria given in performanceTable matrix is not equal to the number of criteria names.")
-  assert(all(criteria %in% c("c", "g")), "Criteria must be of type `c` or `g`.")
+  validate(ncol(criteria) == numberOfCriterions, "numberOfCriterions","Number of criteria given in performanceTable matrix is not equal to the number of criteria names.")
+  validate(all(criteria %in% c("c", "g")), "criteria", "Criteria must be of type `c` or `g`.")
 
   validateRelations(preferenceRelations, numberOfPreferences, relationName = "preference")
   validateRelations(indifferenceRelations, numberOfPreferences, relationName = "indifference")
@@ -62,14 +62,19 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
 
 validateRelations <- function(relation, numberOfPreferences, arity = 2, relationName = "unknown")
 {
+  action <- "validateRelations"
   if(!is.matrix(relation) || is.null(relation))
   {
     return (matrix(nrow=0, ncol=arity))
   }
 
-  assert(ncol(relation) == arity, paste("Relation", relationName, "has arity:", arity, ". Number of arguments typed:", ncol(relation), "."))
+  validate(ncol(relation) == arity, action, paste("Relation", relationName, "has arity:", arity, ". Number of arguments typed:", ncol(relation), "."))
 
   #check weather minimum and maximum index are in performanceTable indices bounds
-  assert(min(relation) >= 1, "There is no preference with index lower than 1")
-  assert(max(relation) <= numberOfPreferences, paste("There is no preference with index higher than:", numberOfPreferences, ". Typed a preference with index:", max(relation)))
+  validate(all(relation >= 1), action, "There is no preference with index lower than 1")
+  validate(all(relation <= numberOfPreferences), action, paste("There is no preference with index higher than:", numberOfPreferences, ". Typed a preference with index:", max(relation)))
+}
+
+validate <- function(condition, action, message){
+  assert(condition, paste("Error while validating", action, ":", message))
 }
