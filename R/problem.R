@@ -93,7 +93,7 @@ validateDesiredRank <- function(desiredRank, performanceTable){
   numberOfAlternatives <- nrow(performanceTable)
   validate(all(desiredRank <= numberOfAlternatives), action,
            paste("Both alternatives indices and rank desired place must be lower than", numberOfAlternatives))
-  validate(all(problem$desiredRank[,2] >= problem$desiredRank[,3]), action,
+  validate(all(desiredRank[,2] >= desiredRank[,3]), action,
            "All lower places in the desiredRank should be greater or equal to the upper places")
 }
 
