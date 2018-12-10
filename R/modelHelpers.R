@@ -212,7 +212,7 @@ getCriteriaIndices <- function(problem, substractZeroCoefficients){
   criteriaIndices
 }
 
-buildLHSForPairwiseComparison <- function(alternativeIndex, referenceAlternativeIndex, model){
+substractUtilityValuesOfAlternatives <- function(alternativeIndex, referenceAlternativeIndex, model){
   # U(referenceAlternative) - U(alternative)
   model$preferencesToModelVariables[referenceAlternativeIndex,] - model$preferencesToModelVariables[alternativeIndex, ]
 }
@@ -223,11 +223,11 @@ buildPairwiseComparisonConstraint <- function(alternativeIndex, referenceAlterna
 
   marginalValuesVariables <- c()
   if(length(alternativeIndex) == 1){
-    marginalValuesVariables <- buildLHSForPairwiseComparison(alternativeIndex, referenceAlternativeIndex, model)
+    marginalValuesVariables <- substractUtilityValuesOfAlternatives(alternativeIndex, referenceAlternativeIndex, model)
   } else {
     # -a + b + (-d + c)
-    marginalValuesVariables <- buildLHSForPairwiseComparison(alternativeIndex[1], alternativeIndex[2], model) +
-      buildLHSForPairwiseComparison(referenceAlternativeIndex[1], referenceAlternativeIndex[2], model)
+    marginalValuesVariables <- substractUtilityValuesOfAlternatives(alternativeIndex[1], alternativeIndex[2], model) +
+      substractUtilityValuesOfAlternatives(referenceAlternativeIndex[1], referenceAlternativeIndex[2], model)
   }
   # lhs holds a vector of a length equal to the number of marginal values
   # lhs should be a vector of the length of a number of columns in constraints matrix
