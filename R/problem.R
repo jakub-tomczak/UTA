@@ -4,12 +4,12 @@
 buildProblem <- function(performanceTable, criteria, characteristicPoints,
                          preferenceRelations = NULL, indifferenceRelations = NULL,
                          preferenceIntensitiesRelations = NULL, indifferenceIntensitiesRelations = NULL,
-                         desiredRank = NULL)
+                         desiredRank = NULL, desiredUtilityValue = NULL)
 {
   problem <- validateModel(performanceTable, criteria, characteristicPoints,
                            preferenceRelations, indifferenceRelations,
                            preferenceIntensitiesRelations, indifferenceIntensitiesRelations,
-                           desiredRank)
+                           desiredRank, desiredUtilityValue)
 
   nrAlternatives <- nrow(problem$performance)
   #contains TRUE on indices corresponding to the criteria that has no characteristicPoints
@@ -35,7 +35,7 @@ buildProblem <- function(performanceTable, criteria, characteristicPoints,
 validateModel <- function(performanceTable, criteria, characteristicPoints,
                           preferenceRelations, indifferenceRelations,
                           preferenceIntensitiesRelations, indifferenceIntensitiesRelations,
-                          desiredRank,
+                          desiredRank, desiredUtilityValue,
                           method = NULL)
 {
   validate(is.matrix(performanceTable), "performanceTable", "performanceTable must be a matrix.")
@@ -50,7 +50,8 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
   validateRelations(preferenceIntensitiesRelations, numberOfPreferences, arity = 4, relationName = "preferenceIntensities")
   validateRelations(indifferenceIntensitiesRelations, numberOfPreferences, arity = 4, relationName = "indifferenceIntensities")
 
-  validateDesiredRank(desiredRank, performanceTable)
+  validateDesiredRank(desiredRank, performanceTable, "desiredRank")
+  validateDesiredRank(desiredUtilityValue, performanceTable, "desiredUtilityValue")
   # assert(is.matrix(indifferenceRelations), "Indifference must be a matrix")
 
   return (list(
@@ -81,20 +82,33 @@ validateRelations <- function(relation, numberOfPreferences, arity = 2, relation
   validate(all(relation <= numberOfPreferences), action, paste("There is no preference with index higher than:", numberOfPreferences, ". Typed a preference with index:", max(relation)))
 }
 
-validateDesiredRank <- function(desiredRank, performanceTable){
-  action <- "desiredRank"
+validateDesiredRank <- function(desiredRank, performanceTable, action){
   if(is.null(desiredRank)){
     return(matrix(nrow=0, ncol=3))
   }
-  validate( is.matrix(desiredRank) && ncol(desiredRank) == 3, action,
-          "desiredRank variable should be a matrix with 3 columns (a, l, u), where a = alternative index, l = lower place in the ranking, u = upper place in the ranking.")
+  error_text <- ifelse(action == "desiredRank",
+                       "l = lower place in the ranking, u = upper place in the ranking.",
+                        "l = lower value of the utility value, u = upper value of the utility value.")
 
-  validate(all(desiredRank >= 1), action, "There is no an alternative with index lower than 1")
-  numberOfAlternatives <- nrow(performanceTable)
-  validate(all(desiredRank <= numberOfAlternatives), action,
-           paste("Both alternatives indices and rank desired place must be lower than", numberOfAlternatives))
-  validate(all(desiredRank[,2] >= desiredRank[,3]), action,
-           "All lower places in the desiredRank should be greater or equal to the upper places")
+  validate( is.matrix(desiredRank) && ncol(desiredRank) == 3, action,
+          paste(action, " variable should be a matrix with 3 columns (a, l, u), where a = alternative index, ", error_text))
+
+  if(action == "desiredRank"){
+    validate(all(desiredRank >= 1), action, "There is no an alternative with index lower than 1")
+    numberOfAlternatives <- nrow(performanceTable)
+    validate(all(desiredRank <= numberOfAlternatives), action,
+             paste("Both alternatives indices and ", action, " must be lower than", numberOfAlternatives))
+    validate(all(desiredRank[,2] >= desiredRank[,3]), action,
+             paste("All lower places in the desiredRank should be greater or equal to the upper places"))
+  } else {
+    validate(all(desiredRank[,1] >= 1), action, "There is no an alternative with index lower than 1")
+    validate(all(desiredRank[,c(2,3)] >= 0) && all(desiredRank[,c(2,3)] <= 1), action, "Desired utility values must be in range <0, 1>")
+    numberOfAlternatives <- nrow(performanceTable)
+    validate(all(desiredRank <= numberOfAlternatives), action,
+             paste("Both alternatives indices and ", action, " must be lower than", numberOfAlternatives))
+    validate(all(desiredRank[,2] <= desiredRank[,3]), action,
+             paste("Lower value of the utility value must be lower than the upper value of the utility value."))
+  }
 }
 
 validate <- function(condition, action, message){
