@@ -17,7 +17,7 @@ solveProblem <- function(model, allowInconsistency = FALSE)
   {
     utamp2(model, allowInconsistency)
   } else if(model$methodName == availableMethods$roruta){
-    stop("roruta has not been defined yet.")
+    roruta(model, allowInconsistency)
   } else {
     stop(paste(availableMethods, " "))
   }
@@ -114,4 +114,10 @@ utamp2 <- function(model, allowInconsistency = FALSE) {
     methodResult$valueFunctionsMarginalValues <- getValueFunctionsMarginalValues(model, solution$solution)
   }
   methodResult
+}
+
+# roruta
+#' @export
+roruta <- function(model, allowInconsistency){
+
 }

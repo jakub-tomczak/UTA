@@ -1,7 +1,7 @@
 #### BUILDING MODEL
 
 #' @export
-buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4) { # includeEpsilonAsVariable,
+buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumber = 1e9) { # includeEpsilonAsVariable,
   availableMethods <- getAvailableMethods()
   assert(method %in% availableMethods, paste(availableMethods, " "))
   nrAlternatives <- nrow(problem$performance)
@@ -95,7 +95,30 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4) { # incl
 
     # rename k to epsilon
     model$epsilonIndex <- model$kIndex
+    # remove k index
     model$kIndex <- NULL
+
+    # rank requirements
+    # add constraints for the desiredRank and desiredUtilityValue
+    # desiredUtilityValue matters only when there is at least one row in the desiredRank
+    if(nrow(problem$desiredRank) > 0)
+    {
+      desiredRankConstraints <- createRankRelatedConstraints(problem, model, minEpsilon, bigNumber)
+
+      # augment model's lhs to fit desiredRankConstraints
+      numberOfColumnsToAddToOldConstraints <- ncol(desiredRankConstraints$lhs) - ncol(model$constraints$lhs)
+      matrixToAdd <- matrix(0, nrow = nrow(model$constraints$lhs), ncol = numberOfColumnsToAddToOldConstraints)
+      model$constraints$lhs <- cbind(model$constraints$lhs, matrixToAdd)
+
+      # now we can merge desiredRankConstraints with model's
+      # LHS
+      model$constraints$lhs <- rbind(model$constraints$lhs, desiredRankConstraints$lhs)
+      # RHS
+      model$constraints$rhs <- c(model$constraints$rhs, desiredRankConstraints$rhs)
+      # dir
+      model$constraints$dir <- c(model$constraints$dir, desiredRankConstraints$dir)
+      model$constraints$variablesTypes <- desiredRankConstraints$variablesTypes
+    }
   } else if(method == availableMethods$utamp1){
     model$constraints <- splitVariable(model, model$kIndex)
   } else if(method == availableMethods$utamp2) {
