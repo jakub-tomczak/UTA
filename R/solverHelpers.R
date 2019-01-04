@@ -4,9 +4,18 @@ extremizeVariable <- function(objective, constraints, maximize) {
                  types = constraints$variablesType)
 }
 
-createObjective <- function(numberOfConstraints, extremizedVariableIndex){
+getMethodResult <- function(model, solution){
+  methodResult <- list()
+  methodResult$localUtilityValues <- calculateUtilityValues(model, solution$solution)
+  globalUtilityValues <- utilityValues <- apply(methodResult$localUtilityValues, MARGIN = 1, function(x){ sum(x) })
+  methodResult$ranking <- generateRanking(globalUtilityValues)
+  methodResult$valueFunctionsMarginalValues <- getValueFunctionsMarginalValues(model, solution$solution)
+  methodResult
+}
+
+createObjective <- function(lhsMatrix, extremizedVariableIndex){
   assert(!is.null(extremizedVariableIndex), 'Variable to extremize is NULL')
-  obj <- rep(0, ncol(numberOfConstraints))
+  obj <- rep(0, ncol(lhsMatrix))
   obj[extremizedVariableIndex] <- 1
   obj
 }
@@ -101,7 +110,7 @@ validateSolution <- function(solution, allowInconsistency){
   }
   else
   {
-    print("Unknown error.")
+    print("Model is not feasible.")
     return(FALSE)
   }
 }

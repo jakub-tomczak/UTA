@@ -43,6 +43,12 @@ utag <- function(model, allowInconsistency = FALSE)
     objective <- createObjective(model$constraints$lhs, extremizedCriterionIndex)
     solutionMin <- extremizeVariable(objective, model$constraints, maximize=FALSE)
     solutionMax <- extremizeVariable(objective, model$constraints, maximize=TRUE)
+
+    if(!validateSolution(solutionMin, allowInconsistency) || validateSolution(solutionMax, allowInconsistency))
+    {
+      return(NULL)
+    }
+
     meanVFMarginalValues <- meanVFMarginalValues + solutionMin$solution + solutionMax$solution
     # add appropriate from min and max solution
     # to all criteria
@@ -75,22 +81,14 @@ utamp1 <- function(model, allowInconsistency = FALSE) {
   objectiveIndex <- c(model$kIndex)
   objective <- createObjective(model$constraints$lhs, objectiveIndex)
   solution <- extremizeVariable(objective, model$constraints, maximize=TRUE)
-  assert(solution$status == 0, "Model is not feasible")
-
-  methodResult <- list()
-  methodResult$solution <- solution
-  methodResult$valueFunctions <- list()
 
   if(validateSolution(solution, allowInconsistency)){
-    methodResult$localUtilityValues <- calculateUtilityValues(model, solution$solution)
-    globalUtilityValues <- utilityValues <- apply(methodResult$localUtilityValues, MARGIN = 1, function(x){ sum(x) })
-    methodResult$ranking <- generateRanking(globalUtilityValues)
+    methodResult <- getMethodResult(model, solution)
     #method specific functionality
-
     methodResult$epsilon <- solution$solution[objectiveIndex]
-    methodResult$valueFunctionsMarginalValues <- getValueFunctionsMarginalValues(model, solution$solution)
+    return(methodResult)
   }
-  methodResult
+  NULL
 }
 
 #UTAMP-2
@@ -102,18 +100,15 @@ utamp2 <- function(model, allowInconsistency = FALSE) {
   objectiveIndex <- c(model$rhoIndex, model$kIndex)
   objective <- createObjective(model$constraints$lhs, objectiveIndex)
   solution <- extremizeVariable(objective, model$constraints, maximize = TRUE)
-  methodResult <- list()
 
   if(validateSolution(solution, allowInconsistency)){
-    methodResult$localUtilityValues <- calculateUtilityValues(model, solution$solution)
-    globalUtilityValues <- utilityValues <- apply(methodResult$localUtilityValues, MARGIN = 1, function(x){ sum(x) })
-    methodResult$ranking <- generateRanking(globalUtilityValues)
+    methodResult <- getMethodResult(model, solution)
     #method specific functionality
     methodResult$k <- solution$solution[model$kIndex]
     methodResult$rho <- solution$solution[model$rhoIndex]
-    methodResult$valueFunctionsMarginalValues <- getValueFunctionsMarginalValues(model, solution$solution)
+    return(methodResult)
   }
-  methodResult
+  NULL
 }
 
 # roruta
@@ -125,16 +120,13 @@ roruta <- function(model, allowInconsistency){
   objectiveIndex <- c(model$epsilonIndex)
   objective <- createObjective(model$constraints$lhs, objectiveIndex)
   solution <- extremizeVariable(objective, model$constraints, maximize = TRUE)
-  methodResult <- list()
 
   if(validateSolution(solution, allowInconsistency))
   {
-    methodResult$localUtilityValues <- calculateUtilityValues(model, solution$solution)
-    globalUtilityValues <- utilityValues <- apply(methodResult$localUtilityValues, MARGIN = 1, function(x){ sum(x) })
-    methodResult$ranking <- generateRanking(globalUtilityValues)
+    methodResult <- getMethodResult(model, solution)
     #method specific functionality
     methodResult$epsilon <- solution$solution[model$epsilonIndex]
-    methodResult$valueFunctionsMarginalValues <- getValueFunctionsMarginalValues(model, solution$solution)
+    return(methodResult)
   }
-  methodResult
+  NULL
 }
