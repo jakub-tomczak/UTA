@@ -119,5 +119,22 @@ utamp2 <- function(model, allowInconsistency = FALSE) {
 # roruta
 #' @export
 roruta <- function(model, allowInconsistency){
+  assert(!is.null(model$epsilonIndex),
+         "epsilon must be a variable in the model. Try building model again with a command `buildModel(problem, 'roruta')`.")
 
+  objectiveIndex <- c(model$epsilonIndex)
+  objective <- createObjective(model$constraints$lhs, objectiveIndex)
+  solution <- extremizeVariable(objective, model$constraints, maximize = TRUE)
+  methodResult <- list()
+
+  if(validateSolution(solution, allowInconsistency))
+  {
+    methodResult$localUtilityValues <- calculateUtilityValues(model, solution$solution)
+    globalUtilityValues <- utilityValues <- apply(methodResult$localUtilityValues, MARGIN = 1, function(x){ sum(x) })
+    methodResult$ranking <- generateRanking(globalUtilityValues)
+    #method specific functionality
+    methodResult$epsilon <- solution$solution[model$epsilonIndex]
+    methodResult$valueFunctionsMarginalValues <- getValueFunctionsMarginalValues(model, solution$solution)
+  }
+  methodResult
 }
