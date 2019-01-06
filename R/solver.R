@@ -44,7 +44,7 @@ utag <- function(model, allowInconsistency = FALSE)
     solutionMin <- extremizeVariable(objective, model$constraints, maximize=FALSE)
     solutionMax <- extremizeVariable(objective, model$constraints, maximize=TRUE)
 
-    if(!validateSolution(solutionMin, allowInconsistency) || validateSolution(solutionMax, allowInconsistency))
+    if(!validateSolution(solutionMin, allowInconsistency) || !validateSolution(solutionMax, allowInconsistency))
     {
       return(NULL)
     }
@@ -85,7 +85,7 @@ utamp1 <- function(model, allowInconsistency = FALSE) {
   if(validateSolution(solution, allowInconsistency)){
     methodResult <- getMethodResult(model, solution)
     #method specific functionality
-    methodResult$epsilon <- solution$solution[objectiveIndex]
+    methodResult$k <- solution$solution[model$kIndex]
     return(methodResult)
   }
   NULL

@@ -72,13 +72,10 @@ calculateUtilityValuesOnCriterion <- function(model, value, criterionNumber){
 getValueFunctionsMarginalValues <- function(model, solution){
   sapply(seq_len(length(model$criteriaIndices)), function(j){
     from <- model$criteriaIndices[j]
-    to <- from + model$chPoints[j] - 2
+    to <- from + model$chPoints[j] - 1
 
     x <- seq(min(model$performances[,j]), max(model$performances[,j]), length.out = model$chPoints[j])
-    y <- if(model$criterionPreferenceDirection[j]=="g")
-        c(0, solution[from:to])
-      else
-        c(solution[from:to], 0)
+    y <- solution[from:to]
 
     list(criterionIndex = j,
          characteristicPointsX = x,
