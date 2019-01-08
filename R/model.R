@@ -105,6 +105,8 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
     {
       desiredRankConstraints <- createRankRelatedConstraints(problem, model, minEpsilon, bigNumber)
 
+      col.names <- c(rep("-", ncol(model$constraints$lhs)), desiredRankConstraints$variables.labels)
+      row.names <- c(rep("-", nrow(model$constraints$lhs)),  desiredRankConstraints$constraints.labels)
       # augment model's lhs to fit desiredRankConstraints
       numberOfColumnsToAddToOldConstraints <- ncol(desiredRankConstraints$lhs) - ncol(model$constraints$lhs)
       matrixToAdd <- matrix(0, nrow = nrow(model$constraints$lhs), ncol = numberOfColumnsToAddToOldConstraints)
@@ -113,6 +115,8 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
       # now we can merge desiredRankConstraints with model's
       # LHS
       model$constraints$lhs <- rbind(model$constraints$lhs, desiredRankConstraints$lhs)
+      rownames(model$constraints$lhs) <- row.names
+      colnames(model$constraints$lhs) <- col.names
       # RHS
       model$constraints$rhs <- c(model$constraints$rhs, desiredRankConstraints$rhs)
       # dir

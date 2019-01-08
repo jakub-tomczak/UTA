@@ -8,21 +8,29 @@ createRankRelatedConstraints <- function(problem, model, minEpsilon, bigNumber=1
   numberOfConstraints <- numberOfDesiredRankConstraints*2*nrAlternatives + numberOfDesiredRankConstraints
   # here we include binary variables that represents relations between the same alternative (v_{x,x})
   # they will be removed afterwards
-  numberOfBinaryVariables <- nrAlternatives^2*2
+  numberOfBinaryVariables <- 2*nrAlternatives*numberOfDesiredRankConstraints
   # needed to determine the number of the columns in the new lhs
   currentLHSColumnsNumber <- ncol(model$constraints$lhs)
 
   totalNumberOfColumnsInLHS <- numberOfBinaryVariables + ncol(model$constraints$lhs)
 
 
-  desiredRankConstraintsLHS <- matrix(nrow=numberOfConstraints, ncol=totalNumberOfColumnsInLHS )
+  desiredRankConstraintsLHS <- c()
   desiredRankConstraintsRHS <- c()
 
-  # TODO
-  # add rows for sums of lower and higher ranks - they should be added after binding desiredRankConstraintsLHS to the model's LHS
-  ### desiredRankConstraintsLHS <- cbind(desiredRankConstraintsLHS, matrix(0, nrow=))
+  #constraints labels
+  constraints.labels <- c()
+  #variables labels
+  variables.labels <- c()
+  variables.labels <- c()
+  for(alternative in problem$desiredRank[, 1]){
+    for(referenceAlternative in seq(nrAlternatives))
+    {
+      variables.labels <- c(variables.labels, paste("v_", c(">_", "<_"), alternative, "_", referenceAlternative, sep=""))
+    }
+  }
 
-  matrixIterator <- 1
+
   for(i in seq(numberOfDesiredRankConstraints))
   {
     alternative <- problem$desiredRank[i, 1]
@@ -33,12 +41,13 @@ createRankRelatedConstraints <- function(problem, model, minEpsilon, bigNumber=1
     # U(a*) - U(b) + M*v >= epsilon for each b from A, which is not a
     # and
     # U(b) - U(a*) + M*v >= epsilon for each b from A, which is not a
+
     for(referenceAlternative in seq(nrAlternatives)){
       if(referenceAlternative != alternative)
       {
         for(type in c("lower", "upper"))
         {
-          binaryVariablePosition <- 2*nrAlternatives*(alternative-1) + ifelse(type == "lower",  2*referenceAlternative-1, 2*referenceAlternative)
+          binaryVariablePosition <- (i - 1)*2*nrAlternatives +  ifelse(type == "lower",  2*referenceAlternative-1, 2*referenceAlternative)
           utilityValueDifference <- rep(0, currentLHSColumnsNumber)
           difference <- substractUtilityValuesOfAlternatives(alternative, referenceAlternative, model)
           # create a constraint row, difference can be a subvector if there were variables representing no characteristic points variables
@@ -50,46 +59,61 @@ createRankRelatedConstraints <- function(problem, model, minEpsilon, bigNumber=1
           binaryVariables[binaryVariablePosition] <- -bigNumber
 
           LHS <- c(utilityValueDifference, binaryVariables)
-          desiredRankConstraintsLHS[matrixIterator, ] <- LHS
-          matrixIterator <- matrixIterator + 1
+          desiredRankConstraintsLHS <- rbind(desiredRankConstraintsLHS, LHS)
 
           # RHS
           desiredRankConstraintsRHS <- c(desiredRankConstraintsRHS, 0)
+
+          if(type == "lower"){
+            constraints.labels <- c(constraints.labels, paste(alternative, "-", referenceAlternative))
+          } else {
+            constraints.labels <- c(constraints.labels, paste(referenceAlternative, "-", alternative))
+          }
         }
+        # sum of binary variables v_> + v_< <= 1 constraint
+        activeBinaryVariables <- rep(0, numberOfBinaryVariables)
+        pos <- (i - 1)*2*nrAlternatives + c(2*(referenceAlternative-1)+1, 2*(referenceAlternative-1)+2)
+        activeBinaryVariables[pos] <- 1
+        LHS <- c(rep(0, currentLHSColumnsNumber), activeBinaryVariables)
+        desiredRankConstraintsLHS <- rbind(desiredRankConstraintsLHS, LHS)
+        desiredRankConstraintsRHS <- c(desiredRankConstraintsRHS, 1)
+        constraints.labels <- c(constraints.labels, paste("v_", alternative, "_",referenceAlternative,sep=""))
       }
     }
     # sum of binary variables constraints
     for(type in c("lower", "upper"))
     {
       # LHS
+      sign <- ifelse(type == "lower", ">", "<")
       binaryVariables <- rep(0, numberOfBinaryVariables)
-      indicesForSum <- seq(ifelse(type=="lower", 1, 2), length(binaryVariables), 2)
+      startIndex <- (i - 1)*2*nrAlternatives + ifelse(type=="lower", 1, 2)
+      indicesForSum <- seq(startIndex, startIndex + 2*nrAlternatives - 1, 2)
       binaryVariables[indicesForSum] <- 1
       LHS <- c(rep(0, currentLHSColumnsNumber), binaryVariables)
-      desiredRankConstraintsLHS[matrixIterator, ] <- LHS
-      matrixIterator <- matrixIterator + 1
+      desiredRankConstraintsLHS <- rbind(desiredRankConstraintsLHS, LHS)
 
       # RHS
       RHS <- ifelse(type=="lower", lowerPlace - 1, nrAlternatives - higherPlace)
       desiredRankConstraintsRHS <- c(desiredRankConstraintsRHS, RHS)
-    }
 
-    # sum of binary variables v_> + v_< <= 1 constraint
-    LHS <- c(rep(0, currentLHSColumnsNumber), rep(1, numberOfBinaryVariables))
-    desiredRankConstraintsLHS[matrixIterator, ] <- LHS
-    matrixIterator <- matrixIterator + 1
-    desiredRankConstraintsRHS <- c(desiredRankConstraintsRHS, 1)
+      constraints.labels <- c(constraints.labels, paste("sum_v_", sign, "a,b", sep = ""))
+    }
   }
 
   # here we should combine constraints
   dir <- rep("<=", numberOfConstraints)
   variablesTypes <- c(rep("C", currentLHSColumnsNumber), rep("B", numberOfBinaryVariables))
 
+  rownames(desiredRankConstraintsLHS) <- constraints.labels
+  colnames(desiredRankConstraintsLHS) <- c(rep("-", ncol(model$constraints$lhs)), variables.labels)
+
   constraints <- list(
     lhs = desiredRankConstraintsLHS,
     rhs = desiredRankConstraintsRHS,
     dir = dir,
-    variablesTypes = variablesTypes
+    variablesTypes = variablesTypes,
+    variables.labels = variables.labels,
+    constraints.labels = constraints.labels
   )
 }
 
