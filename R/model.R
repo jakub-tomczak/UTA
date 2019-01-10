@@ -69,9 +69,11 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
 
   # preference information
   #prefInfoIndex <- 1
+  model$constraints <- combineConstraints(model$constraints,
+                                          pairwisePreferenceConstraints(problem, model, "strong"))
 
   model$constraints <- combineConstraints(model$constraints,
-                                          pairwisePreferenceConstraints(problem, model, "preference"))
+                                          pairwisePreferenceConstraints(problem, model, "weak"))
 
   model$constraints <- combineConstraints(model$constraints,
                                           pairwisePreferenceConstraints(problem, model, "indifference"))
@@ -87,7 +89,10 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
     }
   } else if(method == availableMethods$roruta){
     model$constraints <- combineConstraints(model$constraints,
-                                            intensitiesConstraints(problem, model, "preference"))
+                                            intensitiesConstraints(problem, model, "strong"))
+
+    model$constraints <- combineConstraints(model$constraints,
+                                            intensitiesConstraints(problem, model, "weak"))
     model$constraints <- combineConstraints(model$constraints,
                                             intensitiesConstraints(problem, model, "indifference"))
     # remove rho
