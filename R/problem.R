@@ -2,13 +2,15 @@
 # Check validation messages.
 #' @export
 buildProblem <- function(performanceTable, criteria, characteristicPoints,
-                         preferenceRelations = NULL, indifferenceRelations = NULL,
-                         preferenceIntensitiesRelations = NULL, indifferenceIntensitiesRelations = NULL,
+                         strongPreferences = NULL, weakPreferences = NULL, indifferenceRelations = NULL,
+                         strongIntensitiesPreferences = NULL, weakIntensitiesPreferences = NULL,
+                         indifferenceIntensitiesRelations = NULL,
                          desiredRank = NULL, desiredUtilityValue = NULL)
 {
   problem <- validateModel(performanceTable, criteria, characteristicPoints,
-                           preferenceRelations, indifferenceRelations,
-                           preferenceIntensitiesRelations, indifferenceIntensitiesRelations,
+                           strongPreferences, weakPreferences, indifferenceRelations,
+                           strongIntensitiesPreferences, weakIntensitiesPreferences,
+                           indifferenceIntensitiesRelations,
                            desiredRank, desiredUtilityValue)
 
   nrAlternatives <- nrow(problem$performance)
@@ -33,8 +35,9 @@ buildProblem <- function(performanceTable, criteria, characteristicPoints,
 # TODO
 # Remove method parameter.
 validateModel <- function(performanceTable, criteria, characteristicPoints,
-                          preferenceRelations, indifferenceRelations,
-                          preferenceIntensitiesRelations, indifferenceIntensitiesRelations,
+                          strongPreferences, weakPreferences, indifferenceRelations,
+                          strongIntensitiesPreferences, weakIntensitiesPreferences,
+                          indifferenceIntensitiesRelations,
                           desiredRank, desiredUtilityValue,
                           method = NULL)
 {
@@ -45,9 +48,11 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
   validate(ncol(criteria) == numberOfCriterions, "numberOfCriterions","Number of criteria given in performanceTable matrix is not equal to the number of criteria names.")
   validate(all(criteria %in% c("c", "g")), "criteria", "Criteria must be of type `c` or `g`.")
 
-  validateRelations(preferenceRelations, numberOfPreferences, relationName = "preference")
+  validateRelations(strongPreferences, numberOfPreferences, relationName = "strong")
+  validateRelations(weakPreferences, numberOfPreferences, relationName = "weak")
   validateRelations(indifferenceRelations, numberOfPreferences, relationName = "indifference")
-  validateRelations(preferenceIntensitiesRelations, numberOfPreferences, arity = 4, relationName = "preferenceIntensities")
+  validateRelations(strongIntensitiesPreferences, numberOfPreferences, arity = 4, relationName = "strongIntensities")
+  validateRelations(weakIntensitiesPreferences, numberOfPreferences, arity = 4, relationName = "weakIntensities")
   validateRelations(indifferenceIntensitiesRelations, numberOfPreferences, arity = 4, relationName = "indifferenceIntensities")
 
   validateDesiredRank(desiredRank, performanceTable, "desiredRank")
@@ -58,9 +63,11 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
     performanceTable = performanceTable,
     criteria = criteria,
     characteristicPoints = characteristicPoints,
-    preferenceRelations = preferenceRelations,
+    strongPreferences = strongPreferences,
+    weakPreferences = weakPreferences,
     indifferenceRelations = indifferenceRelations,
-    preferenceIntensities = preferenceIntensitiesRelations,
+    strongIntensitiesPreferences = strongIntensitiesPreferences,
+    weakIntensitiesPreferences = weakIntensitiesPreferences,
     indifferenceIntensities = indifferenceIntensitiesRelations,
     strictVF = TRUE,
     desiredRank = desiredRank
@@ -70,16 +77,16 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
 validateRelations <- function(relation, numberOfPreferences, arity = 2, relationName = "unknown")
 {
   action <- "validateRelations"
-  if(!is.matrix(relation) || is.null(relation))
+
+  if(!is.null(relation))
   {
-    return (matrix(nrow=0, ncol=arity))
+    validate(is.matrix(relation), action, paste("Relation", relationName, "must be repesented by a matrix"))
+    validate(ncol(relation) == arity, action, paste("Relation", relationName, "has arity:", arity, ". Number of arguments typed:", ncol(relation), "."))
+
+    #check weather minimum and maximum index are in performanceTable indices bounds
+    validate(all(relation >= 1), action, "There is no preference with index lower than 1")
+    validate(all(relation <= numberOfPreferences), action, paste("There is no preference with index higher than:", numberOfPreferences, ". Typed a preference with index:", max(relation)))
   }
-
-  validate(ncol(relation) == arity, action, paste("Relation", relationName, "has arity:", arity, ". Number of arguments typed:", ncol(relation), "."))
-
-  #check weather minimum and maximum index are in performanceTable indices bounds
-  validate(all(relation >= 1), action, "There is no preference with index lower than 1")
-  validate(all(relation <= numberOfPreferences), action, paste("There is no preference with index higher than:", numberOfPreferences, ". Typed a preference with index:", max(relation)))
 }
 
 validateDesiredRank <- function(desiredRank, performanceTable, action){
