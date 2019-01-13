@@ -2,7 +2,7 @@
 
 export(buildModel)
 export(buildProblem)
-export(necessaryAndPossiblePreferencesAnalysis)
+export(necessaryAndPossiblePreferencesRelationAnalysis)
 export(solveProblem)
 export(utag)
 export(utamp1)
