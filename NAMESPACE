@@ -2,7 +2,8 @@
 
 export(buildModel)
 export(buildProblem)
-export(necessaryAndPossiblePreferencesAnalysis)
+export(necessaryAndPossiblePreferencesRelationAnalysis)
+export(roruta)
 export(solveProblem)
 export(utag)
 export(utamp1)

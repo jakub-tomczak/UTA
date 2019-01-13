@@ -85,7 +85,10 @@ getValueFunctionsMarginalValues <- function(model, solution){
 }
 
 #' @export
-necessaryAndPossiblePreferencesAnalysis <- function(model){
+necessaryAndPossiblePreferencesRelationAnalysis <- function(model){
+  assert(model$methodName == "roruta",
+         "Necessary and possible preference relation analysis is available only in roruta method.")
+
   nrAlternatives <- nrow(model$preferencesToModelVariables)
   necessaryWeakRelations <- matrix(nrow=nrAlternatives, ncol=nrAlternatives)
   possibleWeakRelations <- matrix(nrow=nrAlternatives, ncol=nrAlternatives)
