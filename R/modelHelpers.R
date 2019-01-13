@@ -1,4 +1,25 @@
 #### HELPERS
+checkPreferenceRelationFeasibility <- function(model, alternative, referenceAlternative, relationType){
+  assert(relationType %in% c("possible", "necessary"),
+         "Only necessary and weak preference relations are possible")
+  assert(!is.null(model$epsilonIndex), "Epsilon index must be included in a model")
+
+  objective <- createObjective(model$constraints$lhs, model$epsilonIndex)
+
+  constraints <- model$constraints
+
+  constraints <- combineConstraints(constraints,
+                                    buildPairwiseComparisonConstraint(alternative, referenceAlternative,
+                                                                      model, preferenceType = relationType))
+  solution <- extremizeVariable(objective, constraints, maximize=TRUE)
+
+  if(relationType == "necessary"){
+    return(solution$status != 0 || solution$optimum < model$minEpsilon)
+  } else if(relationType == "possible") {
+    return(solution$status == 0 && solution$optimum >=model$minEpsilon)
+  }
+}
+
 createRankRelatedConstraints <- function(problem, model, minEpsilon, bigNumber=1e9){
   nrAlternatives <- nrow(problem$performanceTable)
   numberOfCriteria <- length(problem$criteria)
@@ -411,6 +432,12 @@ buildPairwiseComparisonConstraint <- function(alternativeIndex, referenceAlterna
     }
   } else if (preferenceType == "indifference") {
     dir <- "=="
+  } else if (preferenceType == "necessary") {
+    dir <- ">="
+    lhs[model$epsilonIndex] <- -1
+  } else if (preferenceType == "possible") {
+    # U(a) - U(b) >= 0 <==> U(b) - U(a) <= 0
+    # do nothing
   }
 
   # use collapse parameter in case of intensity type constraints

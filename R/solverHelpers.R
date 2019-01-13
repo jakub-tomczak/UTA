@@ -84,6 +84,40 @@ getValueFunctionsMarginalValues <- function(model, solution){
   })
 }
 
+#' @export
+necessaryAndPossiblePreferencesAnalysis <- function(model){
+  nrAlternatives <- nrow(model$preferencesToModelVariables)
+  necessaryWeakRelations <- matrix(nrow=nrAlternatives, ncol=nrAlternatives)
+  possibleWeakRelations <- matrix(nrow=nrAlternatives, ncol=nrAlternatives)
+
+  objective <- createObjective(model$constraints$lhs, model$epsilonIndex)
+  # check whether base model may be solved
+  solution <- extremizeVariable(objective = objective, constraints = model$constraints, maximize = TRUE)
+  if(!validateSolution(solution)){
+    return(NULL)
+  }
+
+  for(i in 1:nrAlternatives)
+  {
+    for(j in 1:nrAlternatives)
+    {
+      if(i != j)
+      {
+        necessaryWeakRelations[i,j] <- checkPreferenceRelationFeasibility(model, i, j, "necessary")
+        possibleWeakRelations[i,j] <- checkPreferenceRelationFeasibility(model, i, j, "possible")
+      } else {
+        necessaryWeakRelations[i, j] <- TRUE
+        possibleWeakRelations[i, j] <- TRUE
+      }
+
+    }
+  }
+  list(
+    necessaryWeakRelations = necessaryWeakRelations,
+    possibleWeakRelations = possibleWeakRelations
+  )
+}
+
 validateSolution <- function(solution, allowInconsistency){
   if(is.null(solution))
   {
