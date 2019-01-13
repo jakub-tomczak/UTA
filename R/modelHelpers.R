@@ -339,22 +339,31 @@ getCriteriaIndices <- function(problem, substractZeroCoefficients){
 }
 
 substractUtilityValuesOfAlternatives <- function(alternativeIndex, referenceAlternativeIndex, model){
-  # U(referenceAlternative) - U(alternative)
+  # it returns U(referenceAlternative) - U(alternative)
   # alternativeIndex P referenceAlternativeIndex
   model$preferencesToModelVariables[referenceAlternativeIndex,] - model$preferencesToModelVariables[alternativeIndex, ]
 }
 
 buildPairwiseComparisonConstraint <- function(alternativeIndex, referenceAlternativeIndex, model, preferenceType) {
-  assert(preferenceType %in% c("strong", "weak", "indifference"),
-         paste("preferenceType", preferenceType, "is not valid. Valid types of pairwise relations are: strong, weak, indifference"))
+  # TODO test for that assert
+  assert(preferenceType %in% c("strong", "weak", "indifference", "necessary", "possible"),
+         paste("preferenceType", preferenceType, "is not valid. Valid values are: strong, weak, indifference, necessary, possible"))
+  # TODO test for that assert
+  assert(length(alternativeIndex) == length(referenceAlternativeIndex),
+         paste("alternativeIndex (size=",length(alternativeIndex),") must be a vector of the same size as refernceAlternativeIndex (size=",length(referenceAlternativeIndex),")", sep=""))
+  # TODO test for that assert
+  assert(length(alternativeIndex) == 1 || length(alternativeIndex) == 2,
+         paste("Relations arity must be equal 1 or 2, got", length(alternativeIndex),".", sep=""))
+
+  isIntensityRelation <- length(alternativeIndex) == 2
 
   marginalValuesVariables <- c()
-  if(length(alternativeIndex) == 1){
-    marginalValuesVariables <- substractUtilityValuesOfAlternatives(alternativeIndex, referenceAlternativeIndex, model)
-  } else {
+  if(isIntensityRelation){
     # -a + b + (-d + c)
     marginalValuesVariables <- substractUtilityValuesOfAlternatives(alternativeIndex[1], alternativeIndex[2], model) +
       substractUtilityValuesOfAlternatives(referenceAlternativeIndex[1], referenceAlternativeIndex[2], model)
+  } else {
+    marginalValuesVariables <- substractUtilityValuesOfAlternatives(alternativeIndex, referenceAlternativeIndex, model)
   }
   # lhs holds a vector of a length equal to the number of marginal values
   # lhs should be a vector of the length of a number of columns in constraints matrix

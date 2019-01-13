@@ -87,7 +87,7 @@ getValueFunctionsMarginalValues <- function(model, solution){
 validateSolution <- function(solution, allowInconsistency){
   if(is.null(solution))
   {
-    stop("Solution object is empty.")
+    print("Solution object is empty.")
   }
   else if ((solution$status == 0 && solution$optimum >= model$minEpsilon) || allowInconsistency)
   {
@@ -95,19 +95,19 @@ validateSolution <- function(solution, allowInconsistency){
   }
   else if(solution$status != 0)
   {
-    stop("Soultion hasn't been found.")
+    print("Soultion hasn't been found.")
   }
   else if(solution$status == 0 && solution$optimum < model$minEpsilon)
   {
-    stop("Solution has been found but optimum is lower than minEpsilon value.")
+    print("Solution has been found but optimum is lower than minEpsilon value.")
   }
   else if(!allowInconsistency)
   {
-    stop("Inconsistency is not allowed.")
+    print("Inconsistency is not allowed.")
   }
   else
   {
     print("Model is not feasible.")
-    return(FALSE)
   }
+  return(FALSE)
 }

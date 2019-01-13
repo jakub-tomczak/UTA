@@ -106,7 +106,7 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
     # rank requirements
     # add constraints for the desiredRank and desiredUtilityValue
     # desiredUtilityValue matters only when there is at least one row in the desiredRank
-    if(nrow(problem$desiredRank) > 0)
+    if(!is.null(problem$desiredRank) && nrow(problem$desiredRank) > 0)
     {
       desiredRankConstraints <- createRankRelatedConstraints(problem, model, minEpsilon, bigNumber)
 
