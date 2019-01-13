@@ -339,7 +339,7 @@ getCriteriaIndices <- function(problem, substractZeroCoefficients){
 }
 
 substractUtilityValuesOfAlternatives <- function(alternativeIndex, referenceAlternativeIndex, model){
-  # U(referenceAlternative) - U(alternative)
+  # it returns U(referenceAlternative) - U(alternative)
   # alternativeIndex P referenceAlternativeIndex
   model$preferencesToModelVariables[referenceAlternativeIndex,] - model$preferencesToModelVariables[alternativeIndex, ]
 }
