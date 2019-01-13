@@ -128,7 +128,10 @@ normalizationConstraint <- function(problem, numberOfVariables, numberOfCriteria
       lhs[problem$criteriaIndices[j]] <- 1
   }
 
-  list(lhs = lhs, dir = "==", rhs = 1)
+  list(lhs = lhs,
+       dir = "==",
+       rhs = 1,
+       constraints.labels = "norm")
 }
 
 monotonicityConstraints <- function(problem, numberOfVariables, numberOfCriteria, rhoIndex){
@@ -152,7 +155,10 @@ monotonicityConstraints <- function(problem, numberOfVariables, numberOfCriteria
       }
 
       constraints <- combineConstraints(constraints,
-                                        list(lhs = lhs, dir = "<=", rhs = rhs))
+                                        list(lhs = lhs,
+                                             dir = "<=",
+                                             rhs = rhs,
+                                             constraints.labels = paste("mono_", k-1, "_", k, sep="")))
     }
   }
   constraints
@@ -384,7 +390,14 @@ buildPairwiseComparisonConstraint <- function(alternativeIndex, referenceAlterna
     dir <- "=="
   }
 
-  return (list(lhs = lhs, dir = dir, rhs = rhs))
+  # use collapse parameter in case of intensity type constraints
+  constraints.labels.alternative <- paste(alternativeIndex, collapse = ",")
+  constraints.labels.refAlternative <- paste(referenceAlternativeIndex, collapse = ",")
+
+  # substr(preferenceType, 1, 3)
+  constraints.labels <- paste(preferenceType, "_rel_", constraints.labels.alternative, "_", constraints.labels.refAlternative, sep="")
+
+  return (list(lhs = lhs, dir = dir, rhs = rhs, constraints.labels = constraints.labels))
 }
 
 combineConstraints <- function(...) {
@@ -394,6 +407,7 @@ combineConstraints <- function(...) {
   dir <- c()
   rhs <- c()
   variablesTypes <- c()
+  constraints.labels <-c()
 
   for (const in allConst) {
     if (!is.null(const)) {
@@ -401,10 +415,11 @@ combineConstraints <- function(...) {
       dir <- c(dir, const$dir)
       rhs <- c(rhs, const$rhs)
       variablesTypes <- c(variablesTypes, const$variablesTypes)
+      constraints.labels <- c(constraints.labels, const$constraints.labels)
     }
   }
 
-  return (list(lhs = lhs, dir = dir, rhs = rhs, variablesTypes = variablesTypes))
+  return (list(lhs = lhs, dir = dir, rhs = rhs, variablesTypes = variablesTypes, constraints.labels = constraints.labels))
 }
 
 ua <- function(alternative, preferencesToModelVariables) {
@@ -446,7 +461,8 @@ removeColumnsFromModelConstraints <- function(model, columnsIndices){
   constraints <- list(lhs = lhs,
                      rhs = model$constraints$rhs,
                      dir = model$constraints$dir,
-                     variablesTypes = variablesTypes)
+                     variablesTypes = variablesTypes,
+                     constraints.labels = model$constraints$constraints.labels)
 
   # return a new model
   list(
@@ -494,7 +510,7 @@ splitVariable <- function(model, variableIndex){
       # -partialVariable
       lhs[columnsIterator] <- -1
 
-      constraint <- list(lhs = lhs, dir = "<=", rhs = 0)
+      constraint <- list(lhs = lhs, dir = "<=", rhs = 0, constraints.labels = "var_i<var")
       # add new constraint: partialVariable >= variable
       constraints <- combineConstraints(constraints, constraint)
 
