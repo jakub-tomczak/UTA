@@ -94,7 +94,9 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
     # desiredUtilityValue matters only when there is at least one row in the desiredRank
     if(!is.null(problem$desiredRank) && nrow(problem$desiredRank) > 0)
     {
-      desiredRankConstraints <- createRankRelatedConstraints(problem, model, minEpsilon, bigNumber)
+      result <- createRankRelatedConstraints(problem, model, minEpsilon, bigNumber)
+      desiredRankConstraints <- result$constraints
+      model$rankConstraintsFirstBinaryVariableIndices <- result$rankConstraintsFirstBinaryVariableIndices
 
       col.names <- c(rep("-", ncol(model$constraints$lhs)), desiredRankConstraints$variables.labels)
       model$constraints$constraints.labels <- c(model$constraints$constraints.labels, desiredRankConstraints$constraints.labels)

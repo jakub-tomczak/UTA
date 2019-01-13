@@ -121,6 +121,29 @@ necessaryAndPossiblePreferencesRelationAnalysis <- function(model){
   )
 }
 
+#' @export
+extremeRankingAnalysis <- function(model){
+  nrAlternatives <- nrow(model$preferencesToModelVariables)
+  rankPositions <- matrix(nrow=nrAlternatives, ncol=2)
+  colnames(rankPositions) <- c("min position", "max position")
+
+  objective <- createObjective(model$constraints$lhs, model$epsilonIndex)
+  # check whether base model may be solved
+  solution <- extremizeVariable(objective = objective, constraints = model$constraints, maximize = TRUE)
+  if(!validateSolution(solution)){
+    return(NULL)
+  }
+
+  for(i in 1:nrAlternatives)
+  {
+    minPosition <- nrAlternatives - analysePositionInRanking(model, i, "min")
+    maxPosition <- analysePositionInRanking(model, i, "max") + 1
+
+    rankPositions[i, ] <- c(minPosition, maxPosition)
+  }
+  rankPositions
+}
+
 validateSolution <- function(solution, allowInconsistency){
   if(is.null(solution))
   {
