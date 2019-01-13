@@ -134,6 +134,29 @@ normalizationConstraint <- function(problem, numberOfVariables, numberOfCriteria
        constraints.labels = "norm")
 }
 
+leastValuableChPointsEqualZero <- function(problem, numberOfVariables, numberOfCriteria){
+  constraints <- list()
+
+  for(criterion in seq_len(numberOfCriteria)){
+    lhs <- rep(0, numberOfVariables)
+    chPointIndex <- ifelse(problem$criteria[criterion] == 'g',
+                           problem$criteriaIndices[criterion],
+                           problem$criteriaIndices[criterion] + problem$characteristicPoints[criterion] - 1)
+
+    lhs[chPointIndex] <- 1
+    rhs <- 0
+    dir <- "=="
+    constraints.labels <- paste("worstChPoint@",criterion,"=0", sep="")
+
+    constraints <- combineConstraints(constraints,
+                                      list(lhs = lhs,
+                                           dir = dir,
+                                           rhs = rhs,
+                                           constraints.labels = constraints.labels))
+  }
+  constraints
+}
+
 monotonicityConstraints <- function(problem, numberOfVariables, numberOfCriteria, rhoIndex){
   ## monotonicity of vf
   constraints <- list()

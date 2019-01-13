@@ -24,24 +24,16 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
   constraints <- combineConstraints(constraints,
                                     normalizationConstraint(problem, numberOfVariables, nrCriteria))
 
+  ## least valuable characteristic points should be equal 0
+  constraints <- combineConstraints(constraints,
+                                    leastValuableChPointsEqualZero(problem, numberOfVariables, nrCriteria))
+
   ## monotonicity of vf
   constraints <- combineConstraints(constraints,
                                     monotonicityConstraints(problem, numberOfVariables, nrCriteria, rhoIndex))
 
   #criteria of a continous type
   constraints$variablesTypes <- rep("C", ncol(constraints$lhs))
-
-  # remove least valuable characteristic points from coefficientMatrix and criteria indices
-  # first characteristic point in case of a gain type criterion
-  # last characteristic point in case of a cost type criterion
-  leastValuableCharacteristicPoints <- c()
-  for(criterion in seq_len(nrCriteria)){
-    if(problem$criteria[criterion] == 'g'){
-      leastValuableCharacteristicPoints <- c(leastValuableCharacteristicPoints, problem$criteriaIndices[criterion])
-    } else {
-      leastValuableCharacteristicPoints <- c(leastValuableCharacteristicPoints, problem$criteriaIndices[criterion] + problem$characteristicPoints[criterion] - 1)
-    }
-  }
 
   # update criteria indices, before removing the leastValuableCharacteristicPoints
   problem$criteriaIndices <- getCriteriaIndices(problem, substractZeroCoefficients=FALSE)
@@ -60,12 +52,6 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
     methodName = method,
     performances = problem$performanceTable
   )
-
-  # remove least valuable characteristic points
-  # model <- removeColumnsFromModelConstraints(model, leastValuableCharacteristicPoints)
-  # update criteria indices
-  # problem$criteriaIndices <- getCriteriaIndices(problem, substractZeroCoefficients = TRUE)
-  # model$criteriaIndices <- problem$criteriaIndices
 
   # preference information
   #prefInfoIndex <- 1
