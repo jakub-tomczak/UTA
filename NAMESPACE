@@ -2,6 +2,7 @@
 
 export(buildModel)
 export(buildProblem)
+export(extremeRankingAnalysis)
 export(necessaryAndPossiblePreferencesRelationAnalysis)
 export(roruta)
 export(solveProblem)
