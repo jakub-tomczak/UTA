@@ -6,11 +6,8 @@ checkPreferenceRelationFeasibility <- function(model, alternative, referenceAlte
 
   objective <- createObjective(model$constraints$lhs, model$epsilonIndex)
 
-  constraints <- model$constraints
+  constraints <- createModelForNecessaryAndPossibleRelationAnalysis(model, alternative, referenceAlternative, relationType)
 
-  constraints <- combineConstraints(constraints,
-                                    buildPairwiseComparisonConstraint(alternative, referenceAlternative,
-                                                                      model, preferenceType = relationType))
   solution <- extremizeVariable(objective, constraints, maximize=TRUE)
 
   if(relationType == "necessary"){
@@ -18,6 +15,15 @@ checkPreferenceRelationFeasibility <- function(model, alternative, referenceAlte
   } else if(relationType == "possible") {
     return(solution$status == 0 && solution$optimum >=model$minEpsilon)
   }
+}
+
+createModelForNecessaryAndPossibleRelationAnalysis <- function(model, alternative, referenceAlternative, relationType){
+  constraints <- model$constraints
+
+  constraints <- combineConstraints(constraints,
+                                    buildPairwiseComparisonConstraint(alternative, referenceAlternative,
+                                                                      model, preferenceType = relationType))
+  constraints
 }
 
 createRankRelatedConstraints <- function(problem, model, minEpsilon, bigNumber=1e9){
