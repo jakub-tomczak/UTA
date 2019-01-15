@@ -5,13 +5,13 @@ buildProblem <- function(performanceTable, criteria, characteristicPoints,
                          strongPreferences = NULL, weakPreferences = NULL, indifferenceRelations = NULL,
                          strongIntensitiesPreferences = NULL, weakIntensitiesPreferences = NULL,
                          indifferenceIntensitiesRelations = NULL,
-                         desiredRank = NULL, desiredUtilityValue = NULL)
+                         desiredRank = NULL)
 {
   problem <- validateModel(performanceTable, criteria, characteristicPoints,
                            strongPreferences, weakPreferences, indifferenceRelations,
                            strongIntensitiesPreferences, weakIntensitiesPreferences,
                            indifferenceIntensitiesRelations,
-                           desiredRank, desiredUtilityValue)
+                           desiredRank)
 
   nrAlternatives <- nrow(problem$performance)
   #contains TRUE on indices corresponding to the criteria that has no characteristicPoints
@@ -36,7 +36,7 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
                           strongPreferences, weakPreferences, indifferenceRelations,
                           strongIntensitiesPreferences, weakIntensitiesPreferences,
                           indifferenceIntensitiesRelations,
-                          desiredRank, desiredUtilityValue)
+                          desiredRank)
 {
   validate(is.matrix(performanceTable), "performanceTable", "performanceTable must be a matrix.")
 
@@ -53,8 +53,6 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
   validateRelations(indifferenceIntensitiesRelations, numberOfPreferences, arity = 4, relationName = "indifferenceIntensities")
 
   validateDesiredRank(desiredRank, performanceTable, "desiredRank")
-  validateDesiredRank(desiredUtilityValue, performanceTable, "desiredUtilityValue")
-  # assert(is.matrix(indifferenceRelations), "Indifference must be a matrix")
 
   return (list(
     performanceTable = performanceTable,
