@@ -39,6 +39,17 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
   constraints <- combineConstraints(constraints,
                                     monotonicityConstraints(problem, numberOfVariables, nrCriteria, rhoIndex))
 
+  lhs.colnames <- colnames(coefficientsMatrix)
+  if(includeRho)
+  {
+    lhs.colnames <- c(lhs.colnames, "rho")
+  }
+  if(includeK)
+  {
+    lhs.colnames <- c(lhs.colnames, "k")
+  }
+
+  colnames(constraints$lhs) <- lhs.colnames
   #criteria of a continous type
   constraints$variablesTypes <- rep("C", ncol(constraints$lhs))
 
@@ -105,7 +116,11 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
       desiredRankConstraints <- result$constraints
       model$rankConstraintsFirstBinaryVariableIndices <- result$rankConstraintsFirstBinaryVariableIndices
 
-      col.names <- c(rep("-", ncol(model$constraints$lhs)), desiredRankConstraints$variables.labels)
+      if(is.null(colnames(model$constraints$lhs))){
+        col.names <- c(rep("-", ncol(model$constraints$lhs)), desiredRankConstraints$variables.labels)
+      } else {
+        col.names <- c(colnames(model$constraints$lhs), desiredRankConstraints$variables.labels)
+      }
       model$constraints$constraints.labels <- c(model$constraints$constraints.labels, desiredRankConstraints$constraints.labels)
       # augment model's lhs to fit desiredRankConstraints
       numberOfColumnsToAddToOldConstraints <- ncol(desiredRankConstraints$lhs) - ncol(model$constraints$lhs)

@@ -334,7 +334,7 @@ monotonicityConstraints <- function(problem, numberOfVariables, numberOfCriteria
                                         list(lhs = lhs,
                                              dir = "<=",
                                              rhs = rhs,
-                                             constraints.labels = paste("mono_", k-1, "_", k, sep="")))
+                                             constraints.labels = paste("mono_", k, "_", k+1, sep="")))
     }
   }
   constraints
@@ -405,14 +405,18 @@ calculateCoefficientsMatrix <- function(problem){
   numberOfCriteria <- ncol(problem$performance)
 
   characteristicPointsValues <- replicate(numberOfCriteria, c())
+  coefficientsMatrix.colnames <- c()
   for(j in seq_len(numberOfCriteria))
   {
     minV <- min(problem$performance[,j])
     maxV <- max(problem$performance[,j])
     characteristicPointsValues[[j]] <- seq(minV, maxV, length.out = problem$characteristicPoints[j])
+    coefficientsMatrix.colnames <- c(coefficientsMatrix.colnames, paste("x_", j, "_", 1:problem$characteristicPoints[j], sep=""))
   }
 
   coefficientsMatrix <- matrix(0, nrow=numberOfAlternatives, ncol=numberOfColumns)
+  colnames(coefficientsMatrix) <- coefficientsMatrix.colnames
+  rownames(coefficientsMatrix) <- rownames(problem$performanceTable)
   thresholds <- c("lower", "upper")
 
   for(criterion in seq_len(numberOfCriteria)){
@@ -429,6 +433,7 @@ calculateCoefficientsMatrix <- function(problem){
       }
     }
   }
+
   coefficientsMatrix
 }
 
@@ -667,10 +672,10 @@ splitVariable <- function(model, variableIndex){
 
   # find all indices of constraints where variableIndex is enabled <==> 1
   constraintsRowsWithVariable <- which(model$constraints$lhs[, variableIndex] %in% 1)
+  constraints <- model$constraints
 
   if(length(constraintsRowsWithVariable) > 0) {
     # there are some constraints with the variableIndex enabled
-    constraints <- model$constraints
 
     # add as many columns as the number of indices found
     constraints$lhs <- cbind(constraints$lhs, matrix(0, nrow = nrow(constraints$lhs), ncol = length(constraintsRowsWithVariable)))
