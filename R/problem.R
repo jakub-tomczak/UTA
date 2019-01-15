@@ -32,14 +32,11 @@ buildProblem <- function(performanceTable, criteria, characteristicPoints,
   return(problem)
 }
 
-# TODO
-# Remove method parameter.
 validateModel <- function(performanceTable, criteria, characteristicPoints,
                           strongPreferences, weakPreferences, indifferenceRelations,
                           strongIntensitiesPreferences, weakIntensitiesPreferences,
                           indifferenceIntensitiesRelations,
-                          desiredRank, desiredUtilityValue,
-                          method = NULL)
+                          desiredRank, desiredUtilityValue)
 {
   validate(is.matrix(performanceTable), "performanceTable", "performanceTable must be a matrix.")
 
