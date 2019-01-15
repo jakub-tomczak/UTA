@@ -2,6 +2,9 @@
 
 #' @export
 buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumber = 1e9) { # includeEpsilonAsVariable,
+  includeRho <- TRUE
+  includeK <- TRUE
+
   availableMethods <- getAvailableMethods()
   assert(method %in% availableMethods, paste(availableMethods, " "))
   nrAlternatives <- nrow(problem$performance)
@@ -14,9 +17,13 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
   #when constructing problem we get into consideration only the number of characteristic points from value functions
   #we don't consider rho and k
   #here we add one variable that corresponds to rho value
-  numberOfVariables <- problem$numberOfVariables + 2
-  rhoIndex <- numberOfVariables - 1
-  kIndex <- numberOfVariables
+  numberOfVariables <- problem$numberOfVariables + ifelse(includeRho, 1, 0) + ifelse(includeK, 1, 0)
+  rhoIndex <- NULL
+  kIndex <- NULL
+  if(includeRho)
+    rhoIndex <- numberOfVariables-1
+  if(includeK)
+    kIndex <- numberOfVariables
 
   # constraints
   constraints <- list()
