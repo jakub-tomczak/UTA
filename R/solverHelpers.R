@@ -96,7 +96,7 @@ necessaryAndPossiblePreferencesRelationAnalysis <- function(model){
   objective <- createObjective(model$constraints$lhs, model$epsilonIndex)
   # check whether base model may be solved
   solution <- extremizeVariable(objective = objective, constraints = model$constraints, maximize = TRUE)
-  if(!validateSolution(solution)){
+  if(!validateSolution(solution, allowInconsistency = TRUE, model$minEpsilon)){
     return(NULL)
   }
 
@@ -130,7 +130,7 @@ extremeRankingAnalysis <- function(model){
   objective <- createObjective(model$constraints$lhs, model$epsilonIndex)
   # check whether base model may be solved
   solution <- extremizeVariable(objective = objective, constraints = model$constraints, maximize = TRUE)
-  if(!validateSolution(solution)){
+  if(!validateSolution(solution, allowInconsistency = TRUE, model$minEpsilon)){
     return(NULL)
   }
 
@@ -144,12 +144,12 @@ extremeRankingAnalysis <- function(model){
   rankPositions
 }
 
-validateSolution <- function(solution, allowInconsistency){
+validateSolution <- function(solution, allowInconsistency, minEpsilon){
   if(is.null(solution))
   {
     print("Solution object is empty.")
   }
-  else if ((solution$status == 0 && solution$optimum >= model$minEpsilon) || allowInconsistency)
+  else if ((solution$status == 0 && solution$optimum >= minEpsilon) || allowInconsistency)
   {
     return(TRUE)
   }
@@ -157,7 +157,7 @@ validateSolution <- function(solution, allowInconsistency){
   {
     print("Soultion hasn't been found.")
   }
-  else if(solution$status == 0 && solution$optimum < model$minEpsilon)
+  else if(solution$status == 0 && solution$optimum < minEpsilon)
   {
     print("Solution has been found but optimum is lower than minEpsilon value.")
   }

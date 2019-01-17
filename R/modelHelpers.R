@@ -36,7 +36,7 @@ analysePositionInRanking <- function(model, alternative, rankType){
   }
   # solve
   solution <- extremizeVariable(objective, constraints, maximize=FALSE)
-  if(validateSolution(solution, allowInconsistency = TRUE)){
+  if(validateSolution(solution, allowInconsistency = TRUE, minEpsilon = model$minEpsilon)){
     return(sum(solution$solution[startIndex:stopIndex]))
   }
   NULL
