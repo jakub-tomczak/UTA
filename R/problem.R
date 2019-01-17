@@ -40,17 +40,16 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
 {
   validate(is.matrix(performanceTable), "performanceTable", "performanceTable must be a matrix.")
 
-  numberOfPreferences <- nrow(performanceTable)
   numberOfCriterions <- ncol(performanceTable)
   validate(ncol(criteria) == numberOfCriterions, "numberOfCriterions","Number of criteria given in performanceTable matrix is not equal to the number of criteria names.")
   validate(all(criteria %in% c("c", "g")), "criteria", "Criteria must be of type `c` or `g`.")
 
-  validateRelations(strongPreferences, numberOfPreferences, relationName = "strong")
-  validateRelations(weakPreferences, numberOfPreferences, relationName = "weak")
-  validateRelations(indifferenceRelations, numberOfPreferences, relationName = "indifference")
-  validateRelations(strongIntensitiesPreferences, numberOfPreferences, arity = 4, relationName = "strongIntensities")
-  validateRelations(weakIntensitiesPreferences, numberOfPreferences, arity = 4, relationName = "weakIntensities")
-  validateRelations(indifferenceIntensitiesRelations, numberOfPreferences, arity = 4, relationName = "indifferenceIntensities")
+  strongPreferences <- validateRelations(strongPreferences, performanceTable, relationName = "strong")
+  weakPreferences <- validateRelations(weakPreferences, performanceTable, relationName = "weak")
+  indifferenceRelations <- validateRelations(indifferenceRelations, performanceTable, relationName = "indifference")
+  strongIntensitiesPreferences <- validateRelations(strongIntensitiesPreferences, performanceTable, arity = 4, relationName = "strongIntensities")
+  weakIntensitiesPreferences <- validateRelations(weakIntensitiesPreferences, performanceTable, arity = 4, relationName = "weakIntensities")
+  indifferenceIntensitiesRelations <- validateRelations(indifferenceIntensitiesRelations, performanceTable, arity = 4, relationName = "indifferenceIntensities")
 
   validateDesiredRank(desiredRank, performanceTable, "desiredRank")
 
@@ -69,12 +68,15 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
   ))
 }
 
-validateRelations <- function(relation, numberOfPreferences, arity = 2, relationName = "unknown")
+validateRelations <- function(relation, performances, arity = 2, relationName = "unknown")
 {
+  numberOfPreferences <- nrow(performances)
   action <- "validateRelations"
 
   if(!is.null(relation))
   {
+    relation <- translateRelationsStringsIntoAlternativesIds(relation, performances)
+
     validate(is.matrix(relation), action, paste("Relation", relationName, "must be repesented by a matrix"))
     validate(ncol(relation) == arity, action, paste("Relation", relationName, "has arity:", arity, ". Number of arguments typed:", ncol(relation), "."))
 
@@ -82,6 +84,7 @@ validateRelations <- function(relation, numberOfPreferences, arity = 2, relation
     validate(all(relation >= 1), action, "There is no preference with index lower than 1")
     validate(all(relation <= numberOfPreferences), action, paste("There is no preference with index higher than:", numberOfPreferences, ". Typed a preference with index:", max(relation)))
   }
+  relation
 }
 
 validateDesiredRank <- function(desiredRank, performanceTable, action){
@@ -113,6 +116,43 @@ validateDesiredRank <- function(desiredRank, performanceTable, action){
   }
 }
 
+translateRelationsStringsIntoAlternativesIds <- function(relation, performances)
+{
+  action <- "Translating relations strings to ids"
+  alternativesNames <- rownames(performances)
+  if(is.null(alternativesNames))
+  {
+    validate(is.numeric(relation),
+             action,
+             "Relations must be defined as numerical ids of alternatives when alternatives names are not available")
+  }
+
+  if(is.numeric(relation))
+  {
+    return(relation)
+  }
+
+  validate(is.character(relation) && !is.null(alternativesNames), action,
+           "Alternatives names must be specified when relation arguments are strings.")
+
+  newRelationWithIds <- c()
+  for(row in 1:nrow(relation))
+  {
+    newRow <- c()
+    for(col in 1:ncol(relation))
+    {
+      id <- which(alternativesNames == relation[row, col])
+      validate(length(id) > 0, action,
+               paste("There is no alternative with a name corresponding to a relation's argument", relation[row, col]))
+      newRow <- c(newRow, id)
+    }
+    newRelationWithIds <- rbind(newRelationWithIds, newRow)
+  }
+  names <- paste("relation_", 1:nrow(newRelationWithIds), sep="")
+  rownames(newRelationWithIds) <- names
+  newRelationWithIds
+}
+
 validate <- function(condition, action, message){
-  assert(condition, paste("Error while validating", action, ":", message))
+  assert(condition, paste("Error while validating - ", action, ":", message))
 }
