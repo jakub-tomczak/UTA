@@ -44,7 +44,7 @@ utag <- function(model, allowInconsistency = FALSE)
     solutionMin <- extremizeVariable(objective, model$constraints, maximize=FALSE)
     solutionMax <- extremizeVariable(objective, model$constraints, maximize=TRUE)
 
-    if(!validateSolution(solutionMin, allowInconsistency) || !validateSolution(solutionMax, allowInconsistency))
+    if(!validateSolution(solutionMin, allowInconsistency, model$minEpsilon) || !validateSolution(solutionMax, allowInconsistency, model$minEpsilon))
     {
       return(NULL)
     }
@@ -82,7 +82,7 @@ utamp1 <- function(model, allowInconsistency = FALSE) {
   objective <- createObjective(model$constraints$lhs, objectiveIndex)
   solution <- extremizeVariable(objective, model$constraints, maximize=TRUE)
 
-  if(validateSolution(solution, allowInconsistency)){
+  if(validateSolution(solution, allowInconsistency, model$minEpsilon)){
     methodResult <- getMethodResult(model, solution)
     #method specific functionality
     methodResult$k <- solution$solution[model$kIndex]
@@ -101,7 +101,7 @@ utamp2 <- function(model, allowInconsistency = FALSE) {
   objective <- createObjective(model$constraints$lhs, objectiveIndex)
   solution <- extremizeVariable(objective, model$constraints, maximize = TRUE)
 
-  if(validateSolution(solution, allowInconsistency)){
+  if(validateSolution(solution, allowInconsistency, model$minEpsilon)){
     methodResult <- getMethodResult(model, solution)
     #method specific functionality
     methodResult$k <- solution$solution[model$kIndex]
@@ -121,7 +121,7 @@ roruta <- function(model, allowInconsistency){
   objective <- createObjective(model$constraints$lhs, objectiveIndex)
   solution <- extremizeVariable(objective, model$constraints, maximize = TRUE)
 
-  if(validateSolution(solution, allowInconsistency))
+  if(validateSolution(solution, allowInconsistency, model$minEpsilon))
   {
     methodResult <- getMethodResult(model, solution)
     #method specific functionality
