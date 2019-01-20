@@ -2,15 +2,23 @@
 
 #' @export
 buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumber = 1e9) { # includeEpsilonAsVariable,
-  includeRho <- TRUE
-  includeK <- TRUE
-
   availableMethods <- getAvailableMethods()
   assert(method %in% availableMethods, paste(availableMethods, " "))
   nrAlternatives <- nrow(problem$performance)
   nrCriteria <- ncol(problem$performance)
 
-
+  # used in monotonicity constraint
+  includeRho <- FALSE
+  # used in strong preference constraint
+  includeK <- FALSE
+  rhoEpsilon <- 0
+  if(method == availableMethods$utamp1){
+    includeK <- TRUE
+  } else if(method == availableMethods$utamp2)
+  {
+    includeRho <- TRUE
+    includeK <- TRUE
+  }
   #preferences to model variables used in solution
   coefficientsMatrix <- calculateCoefficientsMatrix(problem)
 
@@ -37,7 +45,7 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
 
   ## monotonicity of vf
   constraints <- combineConstraints(constraints,
-                                    monotonicityConstraints(problem, numberOfVariables, nrCriteria, rhoIndex))
+                                    monotonicityConstraints(problem, numberOfVariables, nrCriteria, rhoIndex, rhoEpsilon))
 
   lhs.colnames <- colnames(coefficientsMatrix)
   if(includeRho)
@@ -83,15 +91,7 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
                                           pairwisePreferenceConstraints(problem, model, "indifference"))
 
   # method specific actions
-  if(method == availableMethods$utag){
-    # exchange k variable with a small positive constant
-    # get indices of all constraints that use k
-    constraintsWithKIndex <- which(model$constraints$lhs[, model$kIndex] %in% 1)
-    model <- removeColumnsFromModelConstraints(model, model$kIndex)
-    if(length(constraintsWithKIndex) > 0){
-      model$constraints$rhs[constraintsWithKIndex] = minK
-    }
-  } else if(method == availableMethods$roruta){
+  if(method == availableMethods$roruta){
     model$constraints <- combineConstraints(model$constraints,
                                             intensitiesConstraints(problem, model, "strong"))
 
@@ -99,13 +99,16 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
                                             intensitiesConstraints(problem, model, "weak"))
     model$constraints <- combineConstraints(model$constraints,
                                             intensitiesConstraints(problem, model, "indifference"))
-    # remove rho
-    model <- removeColumnsFromModelConstraints(model, model$rhoIndex)
 
-    # rename k to epsilon
-    model$epsilonIndex <- model$kIndex
-    # remove k index
-    model$kIndex <- NULL
+    # add epsilon decision variable
+    a <- colnames(model$constraints$lhs)
+    newColumnNames <- c(a, "epsilon")
+    model$constraints$lhs <- cbind(model$constraints$lhs, 0)
+    model$constraints$variablesTypes <- c(model$constraints$variablesTypes, "C")
+    # we can add here column names, merging current colnames with "epsilon" would fail,
+    # because after adding a column, R automatically adds an empty label for that new column
+    colnames(model$constraints$lhs) <- newColumnNames
+    model$epsilonIndex <- ncol(model$constraints$lhs)
 
     # rank requirements
     # add constraints for the desiredRank and desiredUtilityValue
@@ -138,11 +141,11 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
       model$constraints$variablesTypes <- desiredRankConstraints$variablesTypes
     }
   } else if(method == availableMethods$utamp1){
-    model$constraints <- splitVariable(model, model$kIndex)
+    model$constraints <- splitVariable(model, model$kIndex, "k")
   } else if(method == availableMethods$utamp2) {
     # split rho into rho_jk
-    model$constraints <- splitVariable(model, model$rhoIndex)
-    model$constraints <- splitVariable(model, model$kIndex)
+    model$constraints <- splitVariable(model, model$rhoIndex, "rho")
+    model$constraints <- splitVariable(model, model$kIndex, "k")
   }
 
   rownames(model$constraints$lhs) <- model$constraints$constraints.labels
