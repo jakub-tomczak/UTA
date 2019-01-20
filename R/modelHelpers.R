@@ -1,40 +1,25 @@
 #### HELPERS
 analysePositionInRanking <- function(model, alternative, rankType){
   assert(rankType %in% c("min", "max"), "rankType may be either min or max.")
-  hasAlternativeRankRequirementsInModel <- !is.na(model$rankConstraintsFirstBinaryVariableIndices[alternative])
   nrAlternatives <- nrow(model$preferencesToModelVariables)
 
   rankingAnalysisConstraints <-
-    createConstraintsForExtremeRankAnalysis(model, alternative, rankType, hasAlternativeRankRequirementsInModel)
+    createConstraintsForExtremeRankAnalysis(model, alternative, rankType)
 
   #merge new constraints with the model's ones
   constraints <- model$constraints
-  if(!hasAlternativeRankRequirementsInModel){
-    # add some columns to lhs
-    numberOfAdditionalColumns <- ncol(rankingAnalysisConstraints$lhs) - ncol(constraints$lhs)
-    constraints$lhs <- cbind(constraints$lhs, matrix(0, nrow=nrow(constraints$lhs), ncol=numberOfAdditionalColumns))
-  }
+  numberOfAdditionalColumns <- ncol(rankingAnalysisConstraints$lhs) - ncol(constraints$lhs)
+  constraints$lhs <- cbind(constraints$lhs, matrix(0, nrow=nrow(constraints$lhs), ncol=numberOfAdditionalColumns))
+
 
   constraints <- combineConstraints(constraints, rankingAnalysisConstraints)
 
+  startIndex <- ncol(constraints$lhs)-(nrAlternatives-1)
   objective <- rep(0, ncol(constraints$lhs))
-  startIndex <- 0
+  objective[startIndex:ncol(constraints$lhs)] <- 1
+  objective[startIndex+alternative-1] <- 0
+  stopIndex <- startIndex + nrAlternatives - 1
 
-  if(hasAlternativeRankRequirementsInModel){
-    objectiveIndices <-
-      seq(ifelse(rankType=="min", 0, 1), 2*nrAlternatives-1, 2) + model$rankConstraintsFirstBinaryVariableIndices[alternative]
-    objective[objectiveIndices] <- 1
-    # don't set 1 in lhs on the current alternative's indices
-    objective[model$rankConstraintsFirstBinaryVariableIndices[alternative]+2*(alternative-1)+ifelse(rankType=="min", 0, 1)] <- 0
-    startIndex <- model$rankConstraintsFirstBinaryVariableIndices[alternative]
-    stopIndex <- startIndex + 2*nrAlternatives - 1
-  } else {
-    startIndex <- ncol(constraints$lhs)-(nrAlternatives-1)
-    objective[startIndex:ncol(constraints$lhs)] <- 1
-    objective[startIndex+alternative-1] <- 0
-    stopIndex <- startIndex + nrAlternatives - 1
-  }
-  # solve
   solution <- extremizeVariable(objective, constraints, maximize=FALSE)
   if(validateSolution(solution, allowInconsistency = TRUE, minEpsilon = model$minEpsilon)){
     return(sum(solution$solution[startIndex:stopIndex]))
@@ -42,7 +27,7 @@ analysePositionInRanking <- function(model, alternative, rankType){
   NULL
 }
 
-createConstraintsForExtremeRankAnalysis <- function(model, alternative, rankType, hasAlternativeRankRequirementsInModel){
+createConstraintsForExtremeRankAnalysis <- function(model, alternative, rankType){
   constraints <- list()
   nrAlternatives <- nrow(model$preferencesToModelVariables)
   modelsNumberOfVariables <- ncol(model$constraints$lhs)
@@ -58,13 +43,10 @@ createConstraintsForExtremeRankAnalysis <- function(model, alternative, rankType
                                                                         referenceAlternativeIndex = i,
                                                                         model)
 
-        if(hasAlternativeRankRequirementsInModel){
-          bPositionInLHS <- model$rankConstraintsFirstBinaryVariableIndices[alternative] + (i-1)*2
-        } else {
-          # augment LHS to represent alternative's v_b
-          lhs <- c(lhs, rep(0, nrAlternatives))
-          bPositionInLHS <- modelsNumberOfVariables + i
-        }
+
+        # augment LHS to represent alternative's v_b
+        lhs <- c(lhs, rep(0, nrAlternatives))
+        bPositionInLHS <- modelsNumberOfVariables + i
 
         constraints.labels <- paste("extremeRank_v_>", alternative, ",", i, sep="")
       } else {
@@ -75,14 +57,8 @@ createConstraintsForExtremeRankAnalysis <- function(model, alternative, rankType
         # put U(a) - U(b) into the LHS
         lhs[1:length(utilityValuesDifference)] <- utilityValuesDifference
 
-
-        if(hasAlternativeRankRequirementsInModel){
-          bPositionInLHS <- model$rankConstraintsFirstBinaryVariableIndices[alternative] + (i-1)*2 + 1
-        } else {
-          lhs <- c(lhs, rep(0, nrAlternatives))
-          bPositionInLHS <- modelsNumberOfVariables + i
-        }
-
+        lhs <- c(lhs, rep(0, nrAlternatives))
+        bPositionInLHS <- modelsNumberOfVariables + i
         constraints.labels <- paste("extremeRank_v_<", alternative, ",", i, sep="")
       }
 
@@ -100,13 +76,9 @@ createConstraintsForExtremeRankAnalysis <- function(model, alternative, rankType
   }
 
   variablesTypes <- c()
-  if(hasAlternativeRankRequirementsInModel) {
-    colnames(constraints$lhs) <- colnames(model$constraints$lhs)
-  } else {
-    newColnames <- paste("v_", rankType, "_", alternative, "_", 1:nrAlternatives, sep="")
-    colnames(constraints$lhs) <- c(colnames(model$constraints$lhs), newColnames)
-    variablesTypes <- rep("B", nrAlternatives)
-  }
+  newColnames <- paste("v_", rankType, "_", alternative, "_", 1:nrAlternatives, sep="")
+  colnames(constraints$lhs) <- c(colnames(model$constraints$lhs), newColnames)
+  variablesTypes <- rep("B", nrAlternatives)
 
   constraints$variablesTypes <- variablesTypes
   rownames(constraints$lhs) <- constraints$constraints.labels
