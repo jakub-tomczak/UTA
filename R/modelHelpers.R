@@ -596,6 +596,7 @@ buildPairwiseComparisonConstraint <- function(alternativeIndex, referenceAlterna
 
   return (list(lhs = lhs, dir = dir, rhs = rhs, constraints.labels = constraints.labels))
 }
+
 # TODO add combining decision variables names
 combineConstraints <- function(...) {
   allConst <- list(...)
