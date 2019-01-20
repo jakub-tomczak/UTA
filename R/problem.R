@@ -38,6 +38,10 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
                           indifferenceIntensitiesRelations,
                           desiredRank)
 {
+  if(is.data.frame(performanceTable))
+  {
+    performanceTable <- data.matrix(performanceTable)
+  }
   validate(is.matrix(performanceTable), "performanceTable", "performanceTable must be a matrix.")
 
   numberOfCriterions <- ncol(performanceTable)
