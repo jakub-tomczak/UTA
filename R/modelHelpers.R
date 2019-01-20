@@ -208,6 +208,8 @@ createRankRelatedConstraints <- function(problem, model, minEpsilon, bigNumber=1
       binaryVariables <- rep(0, numberOfBinaryVariables)
       startIndex <- (i - 1)*2*nrAlternatives + ifelse(type=="lower", 1, 2)
       indicesForSum <- seq(startIndex, startIndex + 2*nrAlternatives - 1, 2)
+      # remove current alternative from being added to the sum
+      indicesForSum <- indicesForSum[-i]
       binaryVariables[indicesForSum] <- 1
       LHS <- c(rep(0, currentLHSColumnsNumber), binaryVariables)
       desiredRankConstraintsLHS <- rbind(desiredRankConstraintsLHS, LHS)
