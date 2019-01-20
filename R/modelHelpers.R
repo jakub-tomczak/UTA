@@ -310,7 +310,8 @@ leastValuableChPointsEqualZero <- function(problem, numberOfVariables, numberOfC
   constraints
 }
 
-monotonicityConstraints <- function(problem, numberOfVariables, numberOfCriteria, rhoIndex){
+# default epsilon value  = 1e-4
+monotonicityConstraints <- function(problem, numberOfVariables, numberOfCriteria, rhoIndex, epsilon){
   ## monotonicity of vf
   constraints <- list()
   for (j in seq_len(numberOfCriteria)) {
@@ -326,8 +327,17 @@ monotonicityConstraints <- function(problem, numberOfVariables, numberOfCriteria
         lhs[problem$criteriaIndices[j] + k] <- 1
       }
 
-      if (problem$strictVF) {
+      if (problem$strictVF && !is.null(rhoIndex)) {
         lhs[rhoIndex] <- 1
+      }
+
+      # if rho is null use small positive number to emphasize the difference between
+      # successive characteristic points
+      if(is.null(rhoIndex))
+      {
+        assert(!is.null(epsilon), "Epslion parameter cannot be null if rhoIndex is null as well.")
+        # epsilon should be mutiplied by -1 in order to use "<=" direction in constraint
+        rhs <- -epsilon
       }
 
       constraints <- combineConstraints(constraints,
@@ -586,7 +596,7 @@ buildPairwiseComparisonConstraint <- function(alternativeIndex, referenceAlterna
 
   return (list(lhs = lhs, dir = dir, rhs = rhs, constraints.labels = constraints.labels))
 }
-
+# TODO add combining decision variables names
 combineConstraints <- function(...) {
   allConst <- list(...)
 
@@ -667,7 +677,7 @@ removeColumnsFromModelConstraints <- function(model, columnsIndices){
   )
 }
 
-splitVariable <- function(model, variableIndex){
+splitVariable <- function(model, variableIndex, variableName){
   colsInConstraints <- ncol(model$constraints$lhs)
 
   # find all indices of constraints where variableIndex is enabled <==> 1
@@ -697,7 +707,7 @@ splitVariable <- function(model, variableIndex){
       # -partialVariable
       lhs[columnsIterator] <- -1
 
-      constraint <- list(lhs = lhs, dir = "<=", rhs = 0, constraints.labels = "var_i<var")
+      constraint <- list(lhs = lhs, dir = "<=", rhs = 0, constraints.labels = paste(variableName, "_i<", variableName, sep=""))
       # add new constraint: partialVariable >= variable
       constraints <- combineConstraints(constraints, constraint)
 
