@@ -45,14 +45,17 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
   validate(is.matrix(performanceTable), "performanceTable", "performanceTable must be a matrix.")
 
   numberOfCriterions <- ncol(performanceTable)
-  validate(ncol(criteria) == numberOfCriterions, "numberOfCriterions","Number of criteria given in performanceTable matrix is not equal to the number of criteria names.")
-  validate(all(criteria %in% c("c", "g")), "criteria", "Criteria must be of type `c` or `g`.")
+  validate(length(criteria) == numberOfCriterions, "numberOfCriterions",
+           "Number of criteria given in performanceTable matrix is not equal to the number of criteria names.")
+  validate(length(characteristicPoints) == numberOfCriterions, "characteristicPoints",
+           paste("There should be ", numberOfCriterions, "characteristic points defined. Got", length(characteristicPoints)))
+  validate(all(criteria %in% c("c", "g")), "criteria", "Criteria must be of type `c` (cost) or `g` (gain).")
 
-  strongPreferences <- validateRelations(strongPreferences, performanceTable, relationName = "strong")
-  weakPreferences <- validateRelations(weakPreferences, performanceTable, relationName = "weak")
+  strongPreferences <- validateRelations(strongPreferences, performanceTable, relationName = "strong preference")
+  weakPreferences <- validateRelations(weakPreferences, performanceTable, relationName = "weak preference")
   indifferenceRelations <- validateRelations(indifferenceRelations, performanceTable, relationName = "indifference")
-  strongIntensitiesPreferences <- validateRelations(strongIntensitiesPreferences, performanceTable, arity = 4, relationName = "strongIntensities")
-  weakIntensitiesPreferences <- validateRelations(weakIntensitiesPreferences, performanceTable, arity = 4, relationName = "weakIntensities")
+  strongIntensitiesPreferences <- validateRelations(strongIntensitiesPreferences, performanceTable, arity = 4, relationName = "strongIntensities preference")
+  weakIntensitiesPreferences <- validateRelations(weakIntensitiesPreferences, performanceTable, arity = 4, relationName = "weakIntensities preference")
   indifferenceIntensitiesRelations <- validateRelations(indifferenceIntensitiesRelations, performanceTable, arity = 4, relationName = "indifferenceIntensities")
 
   validateDesiredRank(desiredRank, performanceTable, "desiredRank")
@@ -75,7 +78,7 @@ validateModel <- function(performanceTable, criteria, characteristicPoints,
 validateRelations <- function(relation, performances, arity = 2, relationName = "unknown")
 {
   numberOfPreferences <- nrow(performances)
-  action <- "validateRelations"
+  action <- paste(relationName, "relation")
 
   if(!is.null(relation))
   {
