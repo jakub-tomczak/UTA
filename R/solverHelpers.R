@@ -123,6 +123,8 @@ necessaryAndPossiblePreferencesRelationAnalysis <- function(model){
 
 #' @export
 extremeRankingAnalysis <- function(model){
+  assert(model$methodName == "roruta",
+         "Extreme ranking analysis is only available in roruta model.")
   nrAlternatives <- nrow(model$preferencesToModelVariables)
   rankPositions <- matrix(nrow=nrAlternatives, ncol=2)
   colnames(rankPositions) <- c("min position", "max position")
