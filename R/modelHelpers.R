@@ -98,9 +98,9 @@ checkPreferenceRelationFeasibility <- function(model, alternative, referenceAlte
   solution <- extremizeVariable(objective, constraints, maximize=TRUE)
 
   if(relationType == "necessary"){
-    return(solution$status != 0 || solution$optimum < model$minEpsilon)
+    return(solution$status != 0 || solution$optimum < 0)
   } else if(relationType == "possible") {
-    return(solution$status == 0 && solution$optimum >=model$minEpsilon)
+    return(solution$status == 0 && solution$optimum >= 0)
   }
 }
 
