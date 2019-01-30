@@ -11,13 +11,17 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
   includeRho <- FALSE
   # used in strong preference constraint
   includeK <- FALSE
+  includeEpsilon <- FALSE
+
   rhoEpsilon <- 0
+  epsilonEpsilon <- 0
   if(method == availableMethods$utamp1){
     includeK <- TRUE
-  } else if(method == availableMethods$utamp2)
-  {
+  } else if(method == availableMethods$utamp2){
     includeRho <- TRUE
     includeK <- TRUE
+  } else if(method == availableMethods$roruta){
+    includeEpsilon <- TRUE
   }
   #preferences to model variables used in solution
   coefficientsMatrix <- calculateCoefficientsMatrix(problem)
@@ -28,10 +32,17 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
   numberOfVariables <- problem$numberOfVariables + ifelse(includeRho, 1, 0) + ifelse(includeK, 1, 0)
   rhoIndex <- NULL
   kIndex <- NULL
+  epsilonIndex <- NULL
+
   if(includeRho)
     rhoIndex <- numberOfVariables-1
-  if(includeK)
+  if(includeK){
     kIndex <- numberOfVariables
+  }
+  if(includeEpsilon){
+    epsilonIndex <- numberOfVariables
+  }
+
 
   # constraints
   constraints <- list()
@@ -56,6 +67,11 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
   {
     lhs.colnames <- c(lhs.colnames, "k")
   }
+  if(includeEpsilon)
+  {
+    lhs.colnames <- c(lhs.colnames, "eps")
+    constraints$lhs <- cbind(constraints$lhs, 0)
+  }
 
   colnames(constraints$lhs) <- lhs.colnames
   #criteria of a continous type
@@ -70,6 +86,7 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
     criteriaIndices = problem$criteriaIndices,
     rhoIndex = rhoIndex,
     kIndex = kIndex,
+    epsilonIndex = epsilonIndex,
     chPoints = problem$characteristicPoints,
     preferencesToModelVariables = coefficientsMatrix,
     criterionPreferenceDirection = problem$criteria,
@@ -100,14 +117,8 @@ buildModel <- function(problem, method, minK = 1e-4, minEpsilon = 1e-4, bigNumbe
     model$constraints <- combineConstraints(model$constraints,
                                             intensitiesConstraints(problem, model, "indifference"))
 
-    # add epsilon decision variable
-    a <- colnames(model$constraints$lhs)
-    newColumnNames <- c(a, "epsilon")
-    model$constraints$lhs <- cbind(model$constraints$lhs, 0)
-    model$constraints$variablesTypes <- c(model$constraints$variablesTypes, "C")
     # we can add here column names, merging current colnames with "epsilon" would fail,
     # because after adding a column, R automatically adds an empty label for that new column
-    colnames(model$constraints$lhs) <- newColumnNames
     model$epsilonIndex <- ncol(model$constraints$lhs)
 
     # rank requirements
