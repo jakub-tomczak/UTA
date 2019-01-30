@@ -123,6 +123,10 @@ necessaryAndPossiblePreferencesRelationAnalysis <- function(model){
 
     }
   }
+  rownames(necessaryWeakRelations) <- rownames(model$performances)
+  colnames(necessaryWeakRelations) <- rownames(model$performances)
+  rownames(possibleWeakRelations) <- rownames(model$performances)
+  colnames(possibleWeakRelations) <- rownames(model$performances)
   list(
     necessaryWeakRelations = necessaryWeakRelations,
     possibleWeakRelations = possibleWeakRelations
@@ -151,6 +155,8 @@ extremeRankingAnalysis <- function(model){
 
     rankPositions[i, ] <- c(minPosition, maxPosition)
   }
+
+  rownames(rankPositions) <- rownames(model$performances)
   rankPositions
 }
 
