@@ -12,10 +12,10 @@ solveProblem <- function(model, allowInconsistency = FALSE)
     utag(model, allowInconsistency)
   } else if(model$methodName == availableMethods$utamp1)
   {
-    utamp1(model, allowInconsistency)
+    utamp1g(model, allowInconsistency)
   } else if(model$methodName == availableMethods$utamp2)
   {
-    utamp2(model, allowInconsistency)
+    utamp2g(model, allowInconsistency)
   } else if(model$methodName == availableMethods$roruta){
     roruta(model, allowInconsistency)
   } else {
@@ -72,9 +72,9 @@ utag <- function(model, allowInconsistency = FALSE)
   methodResult
 }
 
-#UTAMP-1
+#UTAMP1-G
 #' @export
-utamp1 <- function(model, allowInconsistency = FALSE) {
+utamp1g <- function(model, allowInconsistency = FALSE) {
   assert(!is.null(model$kIndex),
          "k must be a variable in the model. Try building model again with a command `buildModel(problem, 'utamp-1')`.")
 
@@ -91,9 +91,9 @@ utamp1 <- function(model, allowInconsistency = FALSE) {
   NULL
 }
 
-#UTAMP-2
+#UTAMP2-G
 #' @export
-utamp2 <- function(model, allowInconsistency = FALSE) {
+utamp2g <- function(model, allowInconsistency = FALSE) {
   assert(!is.null(model$kIndex) && !is.null(model$rhoIndex),
          "k or rho must be a variable in the model. Try building model again with a command `buildModel(problem, 'utamp-2')`.")
 

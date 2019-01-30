@@ -1,5 +1,5 @@
 getAvailableMethods <- function(){
-  list(utag = "uta-g", utamp1 = "utamp-1", utamp2 = "utamp-2", roruta = "roruta")
+  list(utag = "uta-g", utamp1 = "utamp1-g", utamp2 = "utamp2-g", roruta = "roruta")
 }
 
 assert <- function(expression, message)
