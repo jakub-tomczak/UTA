@@ -6,9 +6,17 @@ extremizeVariable <- function(objective, constraints, maximize) {
 
 getMethodResult <- function(model, solution){
   methodResult <- list()
+  alternativesNames <- rownames(model$performances)
+  criteriaNames <- colnames(model$performances)
+
   methodResult$localUtilityValues <- calculateUtilityValues(model, solution$solution)
+  colnames(methodResult$localUtilityValues) <- criteriaNames
+  rownames(methodResult$localUtilityValues) <- alternativesNames
+
   globalUtilityValues <- utilityValues <- apply(methodResult$localUtilityValues, MARGIN = 1, function(x){ sum(x) })
   methodResult$ranking <- generateRanking(globalUtilityValues)
+  rownames(methodResult$ranking) <- alternativesNames
+
   methodResult$valueFunctionsMarginalValues <- getValueFunctionsMarginalValues(model, solution$solution)
   methodResult
 }
@@ -127,7 +135,7 @@ extremeRankingAnalysis <- function(model){
          "Extreme ranking analysis is only available in roruta model.")
   nrAlternatives <- nrow(model$preferencesToModelVariables)
   rankPositions <- matrix(nrow=nrAlternatives, ncol=2)
-  colnames(rankPositions) <- c("min position", "max position")
+  colnames(rankPositions) <- c("The worst rank", "The best rank")
 
   objective <- createObjective(model$constraints$lhs, model$epsilonIndex)
   # check whether base model may be solved

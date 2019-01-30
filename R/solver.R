@@ -69,6 +69,13 @@ utag <- function(model, allowInconsistency = FALSE)
   methodResult$localUtilityValues <- partialUtilityValues
   methodResult$ranking <- generateRanking(utilityValues)
   methodResult$valueFunctionsMarginalValues <- getValueFunctionsMarginalValues(model, VFMarginalValues)
+
+  # assign names
+  colnames(methodResult$localUtilityValues) <- colnames(model$performances)
+  rownames(methodResult$localUtilityValues) <- rownames(model$performances)
+
+  rownames(methodResult$ranking) <- rownames(model$performances)
+
   methodResult
 }
 
